@@ -1,0 +1,1 @@
+{"buildTime":"2023-04-06T19:12:27.282Z","sources":[{"id":"MangaDex","name":"MangaDex","author":"nar1n","desc":"Extension that pulls manga from MangaDex","website":"https://github.com/nar1n","contentRating":"EVERYONE","version":"3.0.0","icon":"icon.png","websiteBaseURL":"https://mangadex.org","intents":37}],"builtWith":{"toolchain":"0.8.0-alpha.38","types":"0.8.0-alpha.38"}}
