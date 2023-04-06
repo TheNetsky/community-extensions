@@ -1,0 +1,18 @@
+#compiled files and the monstor that node usually is
+node_modules
+dist
+bundles
+tmp
+
+#compiled sources
+reference
+
+.prettierrc
+.nyc_output
+coverage
+docs
+
+.idea
+
+# mac stuff
+.DS_Store
