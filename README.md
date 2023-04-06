@@ -1,1 +1,1 @@
-# TEMPLATE USED FOR BRANCHING
+A repo with community maintained Paperback sources!
