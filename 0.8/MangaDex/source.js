@@ -3077,27 +3077,22 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MangaDex = exports.MangaDexInfo = void 0;
-/* eslint-disable @typescript-eslint/ban-ts-comment */
 const types_1 = require("@paperback/types");
 const entities = require("entities");
 const MangaDexSettings_1 = require("./MangaDexSettings");
 const MangaDexHelper_1 = require("./MangaDexHelper");
-const MangaDexSimilarManga_1 = require("./MangaDexSimilarManga");
-const tag_json_1 = __importDefault(require("./external/tag.json"));
 const MangaDexParser_1 = require("./MangaDexParser");
-const MANGADEX_DOMAIN = "https://mangadex.org";
-const MANGADEX_API = "https://api.mangadex.org";
-const COVER_BASE_URL = "https://uploads.mangadex.org/covers";
-// Titles recommendations are shown on the homepage when enabled in source settings.
-// Recommendations are made using https://github.com/Similar-Manga
-const RECOMMENDATION_URL = "https://framboisepi.github.io/SimilarData";
+const tag_json_1 = __importDefault(require("./external/tag.json"));
+const MANGADEX_DOMAIN = 'https://mangadex.org';
+const MANGADEX_API = 'https://api.mangadex.org';
+const COVER_BASE_URL = 'https://uploads.mangadex.org/covers';
 exports.MangaDexInfo = {
-    author: "nar1n",
-    description: "Extension that pulls manga from MangaDex",
-    icon: "icon.png",
-    name: "MangaDex",
-    version: "3.0.0",
-    authorWebsite: "https://github.com/nar1n",
+    author: 'Netsky',
+    description: 'Extension that pulls manga from MangaDex',
+    icon: 'icon.png',
+    name: 'MangaDex',
+    version: '3.0.0',
+    authorWebsite: 'https://github.com/nar1n',
     websiteBaseURL: MANGADEX_DOMAIN,
     contentRating: types_1.ContentRating.EVERYONE,
     intents: types_1.SourceIntents.MANGA_CHAPTERS | types_1.SourceIntents.SETTINGS_UI | types_1.SourceIntents.HOMEPAGE_SECTIONS,
@@ -3119,13 +3114,13 @@ class MangaDex {
                         referer: `${this.MANGADEX_DOMAIN}/`,
                     };
                     let accessToken = await (0, MangaDexSettings_1.getAccessToken)(this.stateManager);
-                    if (request.url.includes("auth/") || !accessToken)
+                    if (request.url.includes('auth/') || !accessToken)
                         return request;
                     // Padding 60 secs to make sure it wont expire in-transit if the connection is really bad
                     if (Number(accessToken.tokenBody.exp) <= Date.now() / 1000 - 60) {
                         try {
-                            const response = await (0, MangaDexSettings_1.authEndpointRequest)(this.requestManager, "refresh", {
-                                token: accessToken.refreshToken,
+                            const response = await (0, MangaDexSettings_1.authEndpointRequest)(this.requestManager, 'refresh', {
+                                token: accessToken.refreshToken
                             });
                             accessToken = await (0, MangaDexSettings_1.saveAccessToken)(this.stateManager, response.token.session, response.token.refresh);
                             if (!accessToken)
@@ -3138,41 +3133,37 @@ class MangaDex {
                     // Impossible to have undefined headers, ensured by the app
                     request.headers = {
                         ...request.headers,
-                        authorization: "Bearer " + accessToken.accessToken,
+                        authorization: 'Bearer ' + accessToken.accessToken,
                     };
                     return request;
                 },
-                interceptResponse: async (x) => x,
-            },
+                interceptResponse: async (response) => {
+                    return response;
+                }
+            }
         });
     }
     async getSourceMenu() {
         return App.createDUISection({
-            id: "main",
-            header: "Source Settings",
+            id: 'main',
+            header: 'Source Settings',
             isHidden: false,
             rows: async () => [
                 await (0, MangaDexSettings_1.accountSettings)(this.stateManager, this.requestManager),
                 (0, MangaDexSettings_1.contentSettings)(this.stateManager),
                 (0, MangaDexSettings_1.thumbnailSettings)(this.stateManager),
                 (0, MangaDexSettings_1.homepageSettings)(this.stateManager),
-                (0, MangaDexSettings_1.resetSettings)(this.stateManager),
-            ],
+                (0, MangaDexSettings_1.resetSettings)(this.stateManager)
+            ]
         });
     }
-    getMangaShareUrl(mangaId) {
-        return `${this.MANGADEX_DOMAIN}/title/${mangaId}`;
-    }
+    getMangaShareUrl(mangaId) { return `${this.MANGADEX_DOMAIN}/title/${mangaId}`; }
     async getSearchTags() {
         const sections = {};
         for (const tag of tag_json_1.default) {
             const group = tag.data.attributes.group;
             if (sections[group] == null) {
-                sections[group] = App.createTagSection({
-                    id: group,
-                    label: group.charAt(0).toUpperCase() + group.slice(1),
-                    tags: [],
-                });
+                sections[group] = App.createTagSection({ id: group, label: group.charAt(0).toUpperCase() + group.slice(1), tags: [] });
             }
             const tagObject = App.createTag({
                 id: tag.data.id,
@@ -3180,7 +3171,6 @@ class MangaDex {
             });
             // Since we already know that a section for the group has to exist, eslint is complaining
             // for no reason at all.
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             sections[group].tags = [...(sections[group]?.tags ?? []), tagObject];
         }
         return Object.values(sections);
@@ -3194,37 +3184,35 @@ class MangaDex {
     async getCustomListRequestURL(listId, ratings) {
         const request = App.createRequest({
             url: `${this.MANGADEX_API}/list/${listId}`,
-            method: "GET",
+            method: 'GET'
         });
         const response = await this.requestManager.schedule(request, 1);
-        const json = typeof response.data === "string" ? JSON.parse(response.data) : response.data;
+        const json = typeof response.data === 'string' ? JSON.parse(response.data) : response.data;
         return new MangaDexHelper_1.URLBuilder(this.MANGADEX_API)
-            .addPathComponent("manga")
-            .addQueryParameter("limit", 100)
-            .addQueryParameter("contentRating", ratings)
-            .addQueryParameter("includes", ["cover_art"])
-            .addQueryParameter("ids", json.data.relationships.filter((x) => x.type == "manga").map((x) => x.id))
+            .addPathComponent('manga')
+            .addQueryParameter('limit', 100)
+            .addQueryParameter('contentRating', ratings)
+            .addQueryParameter('includes', ['cover_art'])
+            .addQueryParameter('ids', json.data.relationships.filter((x) => x.type == 'manga').map((x) => x.id))
             .buildUrl();
     }
     async getCoversMapping(mangaIds, ratings) {
         const mapping = {};
         const request = App.createRequest({
             url: new MangaDexHelper_1.URLBuilder(this.MANGADEX_API)
-                .addPathComponent("manga")
-                .addQueryParameter("limit", 100)
-                .addQueryParameter("contentRating", ratings)
-                .addQueryParameter("ids", mangaIds)
-                .addQueryParameter("includes", ["cover_art"])
+                .addPathComponent('manga')
+                .addQueryParameter('limit', 100)
+                .addQueryParameter('contentRating', ratings)
+                .addQueryParameter('ids', mangaIds)
+                .addQueryParameter('includes', ['cover_art'])
                 .buildUrl(),
-            method: "GET",
+            method: 'GET'
         });
         const response = await this.requestManager.schedule(request, 1);
-        const json = typeof response.data === "string" ? JSON.parse(response.data) : response.data;
+        const json = typeof response.data === 'string' ? JSON.parse(response.data) : response.data;
         for (const manga of json.data) {
             const mangaId = manga.id;
-            const coverFileName = manga.relationships
-                .filter((x) => x.type == "cover_art")
-                .map((x) => x.attributes?.fileName)[0];
+            const coverFileName = manga.relationships.filter((x) => x.type == 'cover_art').map((x) => x.attributes?.fileName)[0];
             if (!mangaId || !coverFileName)
                 continue;
             mapping[mangaId] = coverFileName;
@@ -3232,52 +3220,44 @@ class MangaDex {
         return mapping;
     }
     async getMangaDetails(mangaId) {
-        if (!mangaId.includes("-")) {
-            // Legacy Id
-            console.log("OLD ID: PLEASE MIGRATE");
-            throw new Error("OLD ID: PLEASE MIGRATE");
-        }
+        this.checkId(mangaId);
         const request = App.createRequest({
             url: new MangaDexHelper_1.URLBuilder(this.MANGADEX_API)
-                .addPathComponent("manga")
+                .addPathComponent('manga')
                 .addPathComponent(mangaId)
-                .addQueryParameter("includes", ["author", "artist", "cover_art"])
+                .addQueryParameter('includes', ['author', 'artist', 'cover_art'])
                 .buildUrl(),
-            method: "GET",
+            method: 'GET'
         });
         const response = await this.requestManager.schedule(request, 1);
-        const json = typeof response.data === "string" ? JSON.parse(response.data) : response.data;
+        const json = typeof response.data === 'string' ? JSON.parse(response.data) : response.data;
         const mangaDetails = json.data.attributes;
-        const titles = ([...Object.values(mangaDetails.title), ...mangaDetails.altTitles.flatMap((x) => Object.values(x))]
-            .map((x) => this.decodeHTMLEntity(x))
-            .filter((x) => x));
-        const desc = this.decodeHTMLEntity(mangaDetails.description.en)?.replace(/\[\/?[bus]]/g, ""); // Get rid of BBcode tags
+        const titles = ([...Object.values(mangaDetails.title),
+            ...mangaDetails.altTitles.flatMap((x) => Object.values(x))].map((x) => this.decodeHTMLEntity(x)).filter((x) => x));
+        const desc = this.decodeHTMLEntity(mangaDetails.description.en)?.replace(/\[\/?[bus]]/g, ''); // Get rid of BBcode tags
         const status = mangaDetails.status;
         const tags = [];
         for (const tag of mangaDetails.tags) {
             const tagName = tag.attributes.name;
-            tags.push(App.createTag({
-                id: tag.id,
-                label: Object.keys(tagName).map((keys) => tagName[keys])[0] ?? "Unknown",
-            }));
+            tags.push(App.createTag({ id: tag.id, label: Object.keys(tagName).map((keys) => tagName[keys])[0] ?? 'Unknown' }));
         }
         const author = json.data.relationships
-            .filter((x) => x.type == "author")
+            .filter((x) => x.type == 'author')
             .map((x) => x.attributes.name)
-            .join(", ");
+            .join(', ');
         const artist = json.data.relationships
-            .filter((x) => x.type == "artist")
+            .filter((x) => x.type == 'artist')
             .map((x) => x.attributes.name)
-            .join(", ");
+            .join(', ');
         const coverFileName = json.data.relationships
-            .filter((x) => x.type == "cover_art")
+            .filter((x) => x.type == 'cover_art')
             .map((x) => x.attributes?.fileName)[0];
         let image;
         if (coverFileName) {
             image = `${this.COVER_BASE_URL}/${mangaId}/${coverFileName}${MangaDexHelper_1.MDImageQuality.getEnding(await (0, MangaDexSettings_1.getMangaThumbnail)(this.stateManager))}`;
         }
         else {
-            image = "https://mangadex.org/_nuxt/img/cover-placeholder.d12c3c5.jpg";
+            image = 'https://mangadex.org/_nuxt/img/cover-placeholder.d12c3c5.jpg';
         }
         return App.createSourceManga({
             id: mangaId,
@@ -3286,25 +3266,14 @@ class MangaDex {
                 image,
                 author,
                 artist,
-                desc: desc ?? "No Description",
-                rating: 5,
+                desc: desc ?? 'No Description',
                 status,
-                tags: [
-                    App.createTagSection({
-                        id: "tags",
-                        label: "Tags",
-                        tags: tags,
-                    }),
-                ],
-            }),
+                tags: [App.createTagSection({ id: 'tags', label: 'Tags', tags: tags, })]
+            })
         });
     }
     async getChapters(mangaId) {
-        if (!mangaId.includes("-")) {
-            // Legacy Id
-            console.log("OLD ID: PLEASE MIGRATE");
-            throw new Error("OLD ID: PLEASE MIGRATE");
-        }
+        this.checkId(mangaId);
         const languages = await (0, MangaDexSettings_1.getLanguages)(this.stateManager);
         const skipSameChapter = await (0, MangaDexSettings_1.getSkipSameChapter)(this.stateManager);
         const ratings = await (0, MangaDexSettings_1.getRatings)(this.stateManager);
@@ -3316,25 +3285,21 @@ class MangaDex {
         while (hasResults) {
             const request = App.createRequest({
                 url: new MangaDexHelper_1.URLBuilder(this.MANGADEX_API)
-                    .addPathComponent("manga")
+                    .addPathComponent('manga')
                     .addPathComponent(mangaId)
-                    .addPathComponent("feed")
-                    .addQueryParameter("limit", 500)
-                    .addQueryParameter("offset", offset)
-                    .addQueryParameter("includes", ["scanlation_group"])
-                    .addQueryParameter("translatedLanguage", languages)
-                    .addQueryParameter("order", {
-                    volume: "desc",
-                    chapter: "desc",
-                    publishAt: "desc",
-                })
-                    .addQueryParameter("contentRating", ratings)
-                    .addQueryParameter("includeFutureUpdates", "0")
+                    .addPathComponent('feed')
+                    .addQueryParameter('limit', 500)
+                    .addQueryParameter('offset', offset)
+                    .addQueryParameter('includes', ['scanlation_group'])
+                    .addQueryParameter('translatedLanguage', languages)
+                    .addQueryParameter('order', { volume: 'desc', chapter: 'desc', publishAt: 'desc' })
+                    .addQueryParameter('contentRating', ratings)
+                    .addQueryParameter('includeFutureUpdates', '0')
                     .buildUrl(),
-                method: "GET",
+                method: 'GET'
             });
             const response = await this.requestManager.schedule(request, 1);
-            const json = typeof response.data === "string" ? JSON.parse(response.data) : response.data;
+            const json = typeof response.data === 'string' ? JSON.parse(response.data) : response.data;
             offset += 500;
             if (json.data === undefined)
                 throw new Error(`Failed to parse json results for ${mangaId}`);
@@ -3347,9 +3312,9 @@ class MangaDex {
                 const langCode = MangaDexHelper_1.MDLanguages.getPBCode(chapterDetails.translatedLanguage);
                 const time = new Date(chapterDetails.publishAt);
                 const group = chapter.relationships
-                    .filter((x) => x.type == "scanlation_group")
+                    .filter((x) => x.type == 'scanlation_group')
                     .map((x) => x.attributes.name)
-                    .join(", ");
+                    .join(', ');
                 const pages = Number(chapterDetails.pages);
                 const identifier = `${volume}-${chapNum}-${chapterDetails.translatedLanguage}`;
                 if (collectedChapters.has(identifier) && skipSameChapter)
@@ -3363,9 +3328,7 @@ class MangaDex {
                         langCode,
                         group,
                         time,
-                        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                        // @ts-ignore
-                        sortingIndex,
+                        sortingIndex
                     }));
                     collectedChapters.add(identifier);
                     sortingIndex--;
@@ -3375,21 +3338,20 @@ class MangaDex {
                 hasResults = false;
             }
         }
-        return chapters;
+        return chapters.map(chapter => {
+            chapter.sortingIndex += chapters.length;
+            return App.createChapter(chapter);
+        });
     }
     async getChapterDetails(mangaId, chapterId) {
-        if (!chapterId.includes("-")) {
-            // Numeric ID
-            console.log("OLD ID: PLEASE MIGRATE");
-            throw new Error("OLD ID: PLEASE REFRESH AND CLEAR ORPHANED CHAPTERS");
-        }
+        this.checkId(chapterId);
         const dataSaver = await (0, MangaDexSettings_1.getDataSaver)(this.stateManager);
         const request = App.createRequest({
             url: `${this.MANGADEX_API}/at-home/server/${chapterId}`,
-            method: "GET",
+            method: 'GET'
         });
         const response = await this.requestManager.schedule(request, 1);
-        const json = typeof response.data === "string" ? JSON.parse(response.data) : response.data;
+        const json = typeof response.data === 'string' ? JSON.parse(response.data) : response.data;
         const serverUrl = json.baseUrl;
         const chapterDetails = json.chapter;
         let pages;
@@ -3399,46 +3361,40 @@ class MangaDex {
         else {
             pages = chapterDetails.data.map((x) => `${serverUrl}/data/${chapterDetails.hash}/${x}`);
         }
-        // The chapter is being read, add the mangaId to the recommendation list
-        (0, MangaDexSimilarManga_1.addRecommendedId)(this.stateManager, mangaId);
         return App.createChapterDetails({
             id: chapterId,
             mangaId: mangaId,
-            pages,
+            pages
         });
     }
     async getSearchResults(query, metadata) {
         const ratings = await (0, MangaDexSettings_1.getRatings)(this.stateManager);
         const offset = metadata?.offset ?? 0;
         let results = [];
-        const searchType = query.title?.match(/[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}/i)
-            ? "ids[]"
-            : "title";
+        const searchType = query.title?.match(/[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}/i) ? 'ids[]' : 'title';
         const url = new MangaDexHelper_1.URLBuilder(this.MANGADEX_API)
-            .addPathComponent("manga")
-            // Since we already know that a title must exist, we can ignore this.
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            .addPathComponent('manga')
             .addQueryParameter(searchType, (query.title?.length ?? 0) > 0 ? encodeURIComponent(query.title) : undefined)
-            .addQueryParameter("limit", 100)
-            .addQueryParameter("offset", offset)
-            .addQueryParameter("contentRating", ratings)
-            .addQueryParameter("includes", ["cover_art"])
-            .addQueryParameter("includedTags", query.includedTags?.map((x) => x.id))
-            .addQueryParameter("includedTagsMode", query.includeOperator)
-            .addQueryParameter("excludedTags", query.excludedTags?.map((x) => x.id))
-            .addQueryParameter("excludedTagsMode", query.excludeOperator)
+            .addQueryParameter('limit', 100)
+            .addQueryParameter('offset', offset)
+            .addQueryParameter('contentRating', ratings)
+            .addQueryParameter('includes', ['cover_art'])
+            .addQueryParameter('includedTags', query.includedTags?.map((x) => x.id))
+            .addQueryParameter('includedTagsMode', query.includeOperator)
+            .addQueryParameter('excludedTags', query.excludedTags?.map((x) => x.id))
+            .addQueryParameter('excludedTagsMode', query.excludeOperator)
             .buildUrl();
         const request = App.createRequest({
             url: url,
-            method: "GET",
+            method: 'GET'
         });
         const response = await this.requestManager.schedule(request, 1);
         if (response.status != 200) {
             return App.createPagedResults({ results });
         }
-        const json = typeof response.data === "string" ? JSON.parse(response.data) : response.data;
+        const json = typeof response.data === 'string' ? JSON.parse(response.data) : response.data;
         if (json.data === undefined) {
-            throw new Error("Failed to parse json for the given search");
+            throw new Error('Failed to parse json for the given search');
         }
         results = await (0, MangaDexParser_1.parseMangaList)(json.data, this, MangaDexSettings_1.getSearchThumbnail);
         return App.createPagedResults({
@@ -3446,9 +3402,7 @@ class MangaDex {
             metadata: { offset: offset + 100 },
         });
     }
-    async getHomePageSections(
-    // eslint-disable-next-line no-unused-vars
-    sectionCallback) {
+    async getHomePageSections(sectionCallback) {
         const ratings = await (0, MangaDexSettings_1.getRatings)(this.stateManager);
         const languages = await (0, MangaDexSettings_1.getLanguages)(this.stateManager);
         const promises = [];
@@ -3458,53 +3412,53 @@ class MangaDex {
         const sections = [
             {
                 request: App.createRequest({
-                    url: await this.getCustomListRequestURL("ff210dec-862b-4c17-8608-0e7f97c70488", ratings),
-                    method: "GET",
+                    url: await this.getCustomListRequestURL('ff210dec-862b-4c17-8608-0e7f97c70488', ratings),
+                    method: 'GET'
                 }),
                 section: App.createHomeSection({
-                    id: "seasonal",
-                    title: "Seasonal",
+                    id: 'seasonal',
+                    title: 'Seasonal',
                     containsMoreItems: false,
-                    type: types_1.HomeSectionType.featured,
-                }),
+                    type: types_1.HomeSectionType.featured
+                })
             },
             {
                 request: App.createRequest({
                     url: new MangaDexHelper_1.URLBuilder(this.MANGADEX_API)
-                        .addPathComponent("manga")
-                        .addQueryParameter("limit", 20)
-                        .addQueryParameter("order", { followedCount: "desc" })
-                        .addQueryParameter("contentRating", ratings)
-                        .addQueryParameter("includes", ["cover_art"])
+                        .addPathComponent('manga')
+                        .addQueryParameter('limit', 20)
+                        .addQueryParameter('order', { followedCount: 'desc' })
+                        .addQueryParameter('contentRating', ratings)
+                        .addQueryParameter('includes', ['cover_art'])
                         .buildUrl(),
-                    method: "GET",
+                    method: 'GET'
                 }),
                 section: App.createHomeSection({
-                    id: "popular",
-                    title: "Popular",
+                    id: 'popular',
+                    title: 'Popular',
                     containsMoreItems: true,
-                    type: "singleRowNormal",
-                }),
+                    type: types_1.HomeSectionType.singleRowNormal
+                })
             },
             {
                 request: App.createRequest({
                     url: new MangaDexHelper_1.URLBuilder(this.MANGADEX_API)
-                        .addPathComponent("chapter")
-                        .addQueryParameter("limit", 100)
-                        .addQueryParameter("order", { publishAt: "desc" })
-                        .addQueryParameter("translatedLanguage", languages)
-                        .addQueryParameter("includes", ["manga"])
-                        .addQueryParameter("includeFutureUpdates", "0")
+                        .addPathComponent('chapter')
+                        .addQueryParameter('limit', 100)
+                        .addQueryParameter('order', { publishAt: 'desc' })
+                        .addQueryParameter('translatedLanguage', languages)
+                        .addQueryParameter('includes', ['manga'])
+                        .addQueryParameter('includeFutureUpdates', '0')
                         .buildUrl(),
-                    method: "GET",
+                    method: 'GET'
                 }),
                 section: App.createHomeSection({
-                    id: "latest_updates",
-                    title: "Latest Updates",
+                    id: 'latest_updates',
+                    title: 'Latest Updates',
                     containsMoreItems: true,
-                    type: "singleRowNormal",
-                }),
-            },
+                    type: types_1.HomeSectionType.singleRowNormal
+                })
+            }
         ];
         for (const section of sections) {
             // We only add the section if it is requested by the user in settings
@@ -3513,14 +3467,13 @@ class MangaDex {
                 sectionCallback(section.section);
                 // Get the section data
                 promises.push(this.requestManager.schedule(section.request, 1).then(async (response) => {
-                    const json = typeof response.data === "string" ? JSON.parse(response.data) : response.data;
-                    if (json.data === undefined)
+                    const json = typeof response.data === 'string' ? JSON.parse(response.data) : response.data;
+                    if (json.data === undefined) {
                         throw new Error(`Failed to parse json results for section ${section.section.title}`);
+                    }
                     switch (section.section.id) {
-                        case "latest_updates": {
-                            const coversMapping = await this.getCoversMapping(json.data.map((x) => {
-                                return x.relationships.filter((x) => x.type == "manga").map((x) => x.id)[0];
-                            }), ratings);
+                        case 'latest_updates': {
+                            const coversMapping = await this.getCoversMapping(json.data.map((x) => { return x.relationships.filter((x) => x.type == 'manga').map((x) => x.id)[0]; }), ratings);
                             section.section.items = await (0, MangaDexParser_1.parseChapterList)(json.data, coversMapping, this, MangaDexSettings_1.getHomepageThumbnail, ratings);
                             break;
                         }
@@ -3531,130 +3484,53 @@ class MangaDex {
                 }));
             }
         }
-        // If the user want to see recommendations on the homepage, we process them
-        if (await (0, MangaDexSettings_1.getEnabledRecommendations)(this.stateManager)) {
-            const recommendedIds = await (0, MangaDexSimilarManga_1.getRecommendedIds)(this.stateManager);
-            for (const recommendedId of recommendedIds) {
-                // First we fetch similar titles
-                const similarRequest = App.createRequest({
-                    url: `${RECOMMENDATION_URL}/similar/${recommendedId}.json`,
-                    method: "GET",
-                });
-                promises.push(this.requestManager.schedule(similarRequest, 1).then(async (similarResponse) => {
-                    // We should only process if the response is valid
-                    // We won't throw an error but silently pass as an error can occurre with
-                    // titles unsupported by SimilarManga (new titles for example)
-                    if (similarResponse.status !== 200) {
-                        console.log(`Could not fetch similar titles for id: ${recommendedId}, request failed with status ${similarResponse.status}`);
-                    }
-                    else {
-                        const similarJson = typeof similarResponse.data === "string" ? JSON.parse(similarResponse.data) : similarResponse.data;
-                        // We should only process if the result is valid
-                        // We won't throw an error but silently pass as an error can occurre with
-                        // titles unsupported by SimilarManga (new titles for example)
-                        if (similarJson.id === undefined) {
-                            console.log("Could not fetch similar titles for id: " + recommendedId + ", json is invalid");
-                        }
-                        else {
-                            // We know the title of the recommended manga, we can thus create the homepage section
-                            const section = App.createHomeSection({
-                                id: recommendedId,
-                                // Can titles be html encoded?
-                                title: "More like " + this.decodeHTMLEntity(similarJson.title.en),
-                                containsMoreItems: false,
-                                type: "singleRowNormal",
-                            });
-                            // Let the app load empty sections
-                            sectionCallback(section);
-                            // Generate the MangaTiles list, sorted by decreasing similarity
-                            const results = [];
-                            // We first add the title used for the recommendation
-                            let image;
-                            if (similarJson.coverFileName === "unknown") {
-                                image = "https://mangadex.org/_nuxt/img/cover-placeholder.d12c3c5.jpg";
-                            }
-                            else {
-                                image = `${COVER_BASE_URL}/${recommendedId}/${similarJson.coverFileName}${MangaDexHelper_1.MDImageQuality.getEnding(await (0, MangaDexSettings_1.getMangaThumbnail)(this.stateManager))}`;
-                            }
-                            results.push(App.createPartialSourceManga({
-                                title: this.decodeHTMLEntity(similarJson.title.en) ?? "No Title",
-                                image,
-                                mangaId: recommendedId,
-                                subtitle: undefined,
-                            }));
-                            // We then add similar titles, ordered by decreasing similarity
-                            for (const manga of similarJson.matches) {
-                                // We should only add the title if its rating is enabled
-                                if (ratings.includes(manga.contentRating)) {
-                                    // The similar api contains the coverFileName or 'unknown'
-                                    let image;
-                                    if (manga.coverFileName === "unknown") {
-                                        image = "https://mangadex.org/_nuxt/img/cover-placeholder.d12c3c5.jpg";
-                                    }
-                                    else {
-                                        image = `${COVER_BASE_URL}/${manga.id}/${manga.coverFileName}${MangaDexHelper_1.MDImageQuality.getEnding(await (0, MangaDexSettings_1.getMangaThumbnail)(this.stateManager))}`;
-                                    }
-                                    results.push(App.createPartialSourceManga({
-                                        title: this.decodeHTMLEntity(manga.title.en) ?? "No Title",
-                                        image,
-                                        mangaId: manga.id,
-                                        subtitle: `Similarity ${manga.score.toFixed(2)}`,
-                                    }));
-                                }
-                            }
-                            section.items = results;
-                            sectionCallback(section);
-                        }
-                    }
-                }));
-            }
-        }
         // Make sure the function completes
         await Promise.all(promises);
     }
     async getViewMoreItems(homepageSectionId, metadata) {
         const offset = metadata?.offset ?? 0;
         const collectedIds = metadata?.collectedIds ?? [];
-        let results = [];
         const ratings = await (0, MangaDexSettings_1.getRatings)(this.stateManager);
         const languages = await (0, MangaDexSettings_1.getLanguages)(this.stateManager);
-        let url = "";
+        let results = [];
+        let url = '';
         switch (homepageSectionId) {
-            case "popular": {
+            case 'popular': {
                 url = new MangaDexHelper_1.URLBuilder(this.MANGADEX_API)
-                    .addPathComponent("manga")
-                    .addQueryParameter("limit", 100)
-                    .addQueryParameter("order", { followedCount: "desc" })
-                    .addQueryParameter("offset", offset)
-                    .addQueryParameter("contentRating", ratings)
-                    .addQueryParameter("includes", ["cover_art"])
+                    .addPathComponent('manga')
+                    .addQueryParameter('limit', 100)
+                    .addQueryParameter('order', { followedCount: 'desc' })
+                    .addQueryParameter('offset', offset)
+                    .addQueryParameter('contentRating', ratings)
+                    .addQueryParameter('includes', ['cover_art'])
                     .buildUrl();
                 break;
             }
-            case "latest_updates": {
+            case 'latest_updates': {
                 url = new MangaDexHelper_1.URLBuilder(this.MANGADEX_API)
-                    .addPathComponent("chapter")
-                    .addQueryParameter("limit", 100)
-                    .addQueryParameter("offset", offset)
-                    .addQueryParameter("order", { publishAt: "desc" })
-                    .addQueryParameter("translatedLanguage", languages)
-                    .addQueryParameter("includes", ["manga"])
-                    .addQueryParameter("includeFutureUpdates", "0")
+                    .addPathComponent('chapter')
+                    .addQueryParameter('limit', 100)
+                    .addQueryParameter('offset', offset)
+                    .addQueryParameter('order', { publishAt: 'desc' })
+                    .addQueryParameter('translatedLanguage', languages)
+                    .addQueryParameter('includes', ['manga'])
+                    .addQueryParameter('includeFutureUpdates', '0')
                     .buildUrl();
                 break;
             }
         }
         const request = App.createRequest({
             url,
-            method: "GET",
+            method: 'GET'
         });
         const response = await this.requestManager.schedule(request, 1);
-        const json = typeof response.data === "string" ? JSON.parse(response.data) : response.data;
-        if (json.data === undefined)
-            throw new Error("Failed to parse json results for getViewMoreItems");
+        const json = typeof response.data === 'string' ? JSON.parse(response.data) : response.data;
+        if (json.data === undefined) {
+            throw new Error('Failed to parse json results for getViewMoreItems');
+        }
         switch (homepageSectionId) {
-            case "latest_updates": {
-                const coversMapping = await this.getCoversMapping(json.data.map((x) => x.relationships.filter((x) => x.type == "manga").map((x) => x.id)[0]), ratings);
+            case 'latest_updates': {
+                const coversMapping = await this.getCoversMapping(json.data.map((x) => x.relationships.filter((x) => x.type == 'manga').map((x) => x.id)[0]), ratings);
                 results = await (0, MangaDexParser_1.parseChapterList)(json.data, coversMapping, this, MangaDexSettings_1.getHomepageThumbnail, ratings);
                 break;
             }
@@ -3671,10 +3547,15 @@ class MangaDex {
             return undefined;
         return entities.decodeHTML(str);
     }
+    checkId(id) {
+        if (!id.includes('-')) {
+            throw new Error('OLD ID: PLEASE REFRESH AND CLEAR ORPHANED CHAPTERS');
+        }
+    }
 }
 exports.MangaDex = MangaDex;
 
-},{"./MangaDexHelper":72,"./MangaDexParser":73,"./MangaDexSettings":74,"./MangaDexSimilarManga":75,"./external/tag.json":76,"@paperback/types":59,"entities":69}],72:[function(require,module,exports){
+},{"./MangaDexHelper":72,"./MangaDexParser":73,"./MangaDexSettings":74,"./external/tag.json":75,"@paperback/types":59,"entities":69}],72:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MDImageQuality = exports.URLBuilder = exports.MDHomepageSections = exports.MDRatings = exports.MDLanguages = void 0;
@@ -4106,17 +3987,12 @@ const parseMangaList = async (object, source, thumbnailSelector) => {
         const mangaId = manga.id;
         const mangaDetails = manga.attributes;
         const title = source.decodeHTMLEntity(Object.values(mangaDetails.title)[0]);
-        const coverFileName = manga.relationships
-            .filter((x) => x.type == 'cover_art')
-            .map((x) => x.attributes?.fileName)[0];
-        const image = coverFileName
-            ? `${source.COVER_BASE_URL}/${mangaId}/${coverFileName}${MangaDexHelper_1.MDImageQuality.getEnding(await thumbnailSelector(source.stateManager))}`
-            : 'https://mangadex.org/_nuxt/img/cover-placeholder.d12c3c5.jpg';
+        const coverFileName = manga.relationships.filter((x) => x.type == 'cover_art').map((x) => x.attributes?.fileName)[0];
+        const image = coverFileName ? `${source.COVER_BASE_URL}/${mangaId}/${coverFileName}${MangaDexHelper_1.MDImageQuality.getEnding(await thumbnailSelector(source.stateManager))}` : 'https://mangadex.org/_nuxt/img/cover-placeholder.d12c3c5.jpg';
         results.push(App.createPartialSourceManga({
             title: title,
             image,
-            mangaId: mangaId,
-            subtitle: undefined,
+            mangaId: mangaId
         }));
     }
     return results;
@@ -4135,20 +4011,15 @@ const parseChapterList = async (chapterObject, coversMapping, source, thumbnailS
         const chapter_num = chapter.attributes.chapter;
         const subtitle = `${volume_num ? `Vol. ${volume_num}` : ''} ${chapter_num ? `Ch. ${chapter_num}` : ''}`;
         const coverFileName = coversMapping[mangaId];
-        const image = coverFileName
-            ? `${source.COVER_BASE_URL}/${mangaId}/${coverFileName}${MangaDexHelper_1.MDImageQuality.getEnding(await thumbnailSelector(source.stateManager))}`
-            : 'https://mangadex.org/_nuxt/img/cover-placeholder.d12c3c5.jpg';
-        if (!mangaId ||
-            !title ||
-            !ratings.includes(chapter.relationships
-                .filter((x) => x.type == 'manga')
-                .map((x) => x.attributes.contentRating)[0]))
+        const image = coverFileName ? `${source.COVER_BASE_URL}/${mangaId}/${coverFileName}${MangaDexHelper_1.MDImageQuality.getEnding(await thumbnailSelector(source.stateManager))}` : 'https://mangadex.org/_nuxt/img/cover-placeholder.d12c3c5.jpg';
+        if (!mangaId || !title || !ratings.includes(chapter.relationships.filter((x) => x.type == 'manga').map((x) => x.attributes.contentRating)[0])) {
             continue;
+        }
         results.push(App.createPartialSourceManga({
             title: title,
             image: image,
             mangaId: mangaId,
-            subtitle: subtitle,
+            subtitle: subtitle
         }));
     }
     return results;
@@ -4159,55 +4030,46 @@ exports.parseChapterList = parseChapterList;
 (function (Buffer){(function (){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.homepageSettings = exports.resetSettings = exports.thumbnailSettings = exports.accountSettings = exports.authEndpointRequest = exports.parseAccessToken = exports.contentSettings = exports.saveAccessToken = exports.getAccessToken = exports.getAmountRecommendations = exports.getEnabledRecommendations = exports.getEnabledHomePageSections = exports.getMangaThumbnail = exports.getSearchThumbnail = exports.getHomepageThumbnail = exports.getSkipSameChapter = exports.getDataSaver = exports.getRatings = exports.getLanguages = void 0;
+exports.homepageSettings = exports.resetSettings = exports.thumbnailSettings = exports.accountSettings = exports.authEndpointRequest = exports.parseAccessToken = exports.contentSettings = exports.saveAccessToken = exports.getAccessToken = exports.getEnabledHomePageSections = exports.getMangaThumbnail = exports.getSearchThumbnail = exports.getHomepageThumbnail = exports.getSkipSameChapter = exports.getDataSaver = exports.getRatings = exports.getLanguages = void 0;
 const MangaDexHelper_1 = require("./MangaDexHelper");
-const MangaDexSimilarManga_1 = require("./MangaDexSimilarManga");
 async function getState(stateManager, key, fallback) {
     return (await stateManager.retrieve(key)) ?? fallback;
 }
 async function getLanguages(stateManager) {
-    return getState(stateManager, "languages", MangaDexHelper_1.MDLanguages.getDefault());
+    return getState(stateManager, 'languages', MangaDexHelper_1.MDLanguages.getDefault());
 }
 exports.getLanguages = getLanguages;
 async function getRatings(stateManager) {
-    return getState(stateManager, "ratings", MangaDexHelper_1.MDRatings.getDefault());
+    return getState(stateManager, 'ratings', MangaDexHelper_1.MDRatings.getDefault());
 }
 exports.getRatings = getRatings;
 async function getDataSaver(stateManager) {
-    return getState(stateManager, "data_saver", false);
+    return getState(stateManager, 'data_saver', false);
 }
 exports.getDataSaver = getDataSaver;
 async function getSkipSameChapter(stateManager) {
-    return getState(stateManager, "skip_same_chapter", false);
+    return getState(stateManager, 'skip_same_chapter', false);
 }
 exports.getSkipSameChapter = getSkipSameChapter;
 async function getHomepageThumbnail(stateManager) {
-    return getState(stateManager, "homepage_thumbnail", MangaDexHelper_1.MDImageQuality.getDefault("homepage"));
+    return getState(stateManager, 'homepage_thumbnail', MangaDexHelper_1.MDImageQuality.getDefault('homepage'));
 }
 exports.getHomepageThumbnail = getHomepageThumbnail;
 async function getSearchThumbnail(stateManager) {
-    return getState(stateManager, "search_thumbnail", MangaDexHelper_1.MDImageQuality.getDefault("search"));
+    return getState(stateManager, 'search_thumbnail', MangaDexHelper_1.MDImageQuality.getDefault('search'));
 }
 exports.getSearchThumbnail = getSearchThumbnail;
 async function getMangaThumbnail(stateManager) {
-    return getState(stateManager, "manga_thumbnail", MangaDexHelper_1.MDImageQuality.getDefault("manga"));
+    return getState(stateManager, 'manga_thumbnail', MangaDexHelper_1.MDImageQuality.getDefault('manga'));
 }
 exports.getMangaThumbnail = getMangaThumbnail;
 async function getEnabledHomePageSections(stateManager) {
-    return getState(stateManager, "enabled_homepage_sections", MangaDexHelper_1.MDHomepageSections.getDefault());
+    return getState(stateManager, 'enabled_homepage_sections', MangaDexHelper_1.MDHomepageSections.getDefault());
 }
 exports.getEnabledHomePageSections = getEnabledHomePageSections;
-async function getEnabledRecommendations(stateManager) {
-    return getState(stateManager, "enabled_recommendations", false);
-}
-exports.getEnabledRecommendations = getEnabledRecommendations;
-async function getAmountRecommendations(stateManager) {
-    return getState(stateManager, "amount_of_recommendations", 5);
-}
-exports.getAmountRecommendations = getAmountRecommendations;
 async function getAccessToken(stateManager) {
-    const accessToken = await stateManager.keychain.retrieve("access_token");
-    const refreshToken = await stateManager.keychain.retrieve("refresh_token");
+    const accessToken = await stateManager.keychain.retrieve('access_token');
+    const refreshToken = await stateManager.keychain.retrieve('refresh_token');
     if (!accessToken)
         return undefined;
     return {
@@ -4219,8 +4081,8 @@ async function getAccessToken(stateManager) {
 exports.getAccessToken = getAccessToken;
 async function saveAccessToken(stateManager, accessToken, refreshToken) {
     await Promise.all([
-        stateManager.keychain.store("access_token", accessToken),
-        stateManager.keychain.store("refresh_token", refreshToken),
+        stateManager.keychain.store('access_token', accessToken),
+        stateManager.keychain.store('refresh_token', refreshToken),
     ]);
     if (!accessToken)
         return undefined;
@@ -4233,81 +4095,93 @@ async function saveAccessToken(stateManager, accessToken, refreshToken) {
 exports.saveAccessToken = saveAccessToken;
 function contentSettings(stateManager) {
     return App.createDUINavigationButton({
-        id: "content_settings",
-        label: "Content Settings",
+        id: 'content_settings',
+        label: 'Content Settings',
         form: App.createDUIForm({
-            onSubmit: async (values) => {
-                await Promise.all([
-                    stateManager.store("languages", values.languages),
-                    stateManager.store("ratings", values.ratings),
-                    stateManager.store("data_saver", values.data_saver),
-                    stateManager.store("skip_same_chapter", values.skip_same_chapter),
-                ]);
-            },
             sections: async () => [
                 App.createDUISection({
                     isHidden: false,
-                    id: "content",
-                    footer: "When enabled, same chapters from different scanlation group will not be shown.",
+                    id: 'content',
+                    footer: 'When enabled, same chapters from different scanlation group will not be shown.',
                     rows: async () => {
                         const values = await Promise.all([
                             getLanguages(stateManager),
                             getRatings(stateManager),
                             getDataSaver(stateManager),
-                            getSkipSameChapter(stateManager),
+                            getSkipSameChapter(stateManager)
                         ]);
                         return await [
                             App.createDUISelect({
-                                id: "languages",
-                                label: "Languages",
+                                id: 'languages',
+                                label: 'Languages',
                                 options: MangaDexHelper_1.MDLanguages.getMDCodeList(),
                                 labelResolver: async (option_1) => MangaDexHelper_1.MDLanguages.getName(option_1),
-                                value: App.createDUIBinding({ get: async () => values[0] }),
-                                allowsMultiselect: true,
+                                value: App.createDUIBinding({
+                                    get: async () => values[0],
+                                    set: async (newValue) => {
+                                        await stateManager.store('languages', newValue);
+                                    },
+                                }),
+                                allowsMultiselect: true
                             }),
                             App.createDUISelect({
-                                id: "ratings",
-                                label: "Content Rating",
+                                id: 'ratings',
+                                label: 'Content Rating',
                                 options: MangaDexHelper_1.MDRatings.getEnumList(),
                                 labelResolver: async (option_3) => MangaDexHelper_1.MDRatings.getName(option_3),
-                                value: App.createDUIBinding({ get: async () => values[1] }),
+                                value: App.createDUIBinding({
+                                    get: async () => values[1],
+                                    set: async (newValue) => {
+                                        await stateManager.store('ratings', newValue);
+                                    }
+                                }),
                                 allowsMultiselect: true,
                             }),
                             App.createDUISwitch({
-                                id: "data_saver",
-                                label: "Data Saver",
-                                value: App.createDUIBinding({ get: async () => values[2] }),
+                                id: 'data_saver',
+                                label: 'Data Saver',
+                                value: App.createDUIBinding({
+                                    get: async () => values[2],
+                                    set: async (newValue) => {
+                                        await stateManager.store('data_saver', newValue);
+                                    }
+                                })
                             }),
                             App.createDUISwitch({
-                                id: "skip_same_chapter",
-                                label: "Skip Same Chapter",
-                                value: App.createDUIBinding({ get: async () => values[3] }),
-                            }),
+                                id: 'skip_same_chapter',
+                                label: 'Skip Same Chapter',
+                                value: App.createDUIBinding({
+                                    get: async () => values[3],
+                                    set: async (newValue) => {
+                                        await stateManager.store('skip_same_chapter', newValue);
+                                    }
+                                })
+                            })
                         ];
-                    },
-                }),
-            ],
-        }),
+                    }
+                })
+            ]
+        })
     });
 }
 exports.contentSettings = contentSettings;
 async function parseAccessToken(accessToken) {
     if (!accessToken)
         return undefined;
-    const tokenBodyBase64 = accessToken.split(".")[1];
+    const tokenBodyBase64 = accessToken.split('.')[1];
     if (!tokenBodyBase64)
         return undefined;
-    const tokenBodyJSON = Buffer.from(tokenBodyBase64, "base64").toString("ascii");
+    const tokenBodyJSON = Buffer.from(tokenBodyBase64, 'base64').toString('ascii');
     return JSON.parse(tokenBodyJSON);
 }
 exports.parseAccessToken = parseAccessToken;
 const authRequestCache = {};
 function authEndpointRequest(requestManager, endpoint, payload) {
     if (authRequestCache[endpoint] == undefined) {
-        console.log("started request");
+        console.log('started request');
         authRequestCache[endpoint] = _authEndpointRequest(requestManager, endpoint, payload).finally(() => {
             delete authRequestCache[endpoint];
-            console.log("completed request");
+            console.log('completed request');
         });
     }
     return authRequestCache[endpoint];
@@ -4315,19 +4189,19 @@ function authEndpointRequest(requestManager, endpoint, payload) {
 exports.authEndpointRequest = authEndpointRequest;
 async function _authEndpointRequest(requestManager, endpoint, payload) {
     const response = await requestManager.schedule(App.createRequest({
-        method: "POST",
-        url: "https://api.mangadex.org/auth/" + endpoint,
+        method: 'POST',
+        url: 'https://api.mangadex.org/auth/' + endpoint,
         headers: {
-            "content-type": "application/json",
+            'content-type': 'application/json'
         },
-        data: payload,
+        data: payload
     }), 1);
     if (response.status > 399) {
-        throw new Error("Request failed with error code:" + response.status);
+        throw new Error('Request failed with error code:' + response.status);
     }
-    const jsonData = typeof response.data === "string" ? JSON.parse(response.data) : response.data;
-    if (jsonData.result != "ok") {
-        throw new Error("Request failed with errors: " + jsonData.errors.map((x) => `[${x.title}]: ${x.detail}`));
+    const jsonData = typeof response.data === 'string' ? JSON.parse(response.data) : response.data;
+    if (jsonData.result != 'ok') {
+        throw new Error('Request failed with errors: ' + jsonData.errors.map((x) => `[${x.title}]: ${x.detail}`));
     }
     return jsonData;
 }
@@ -4335,27 +4209,27 @@ async function accountSettings(stateManager, requestManager) {
     const accessToken = await getAccessToken(stateManager);
     if (!accessToken) {
         return App.createDUIOAuthButton({
-            id: "mdex_oauth",
-            label: "Login with MangaDex",
-            authorizeEndpoint: "https://auth.mangadex.dev/realms/mangadex/protocol/openid-connect/auth",
-            clientId: "thirdparty-oauth-client",
-            redirectUri: "paperback://mangadex-login",
+            id: 'mdex_oauth',
+            label: 'Login with MangaDex',
+            authorizeEndpoint: 'https://auth.mangadex.dev/realms/mangadex/protocol/openid-connect/auth',
+            clientId: 'thirdparty-oauth-client',
+            redirectUri: 'paperback://mangadex-login',
             responseType: {
-                type: "pkce",
+                type: 'pkce',
                 pkceCodeLength: 64,
-                pkceCodeMethod: "S256",
+                pkceCodeMethod: 'S256',
                 formEncodeGrant: true,
-                tokenEndpoint: "https://auth.mangadex.dev/realms/mangadex/protocol/openid-connect/token",
+                tokenEndpoint: 'https://auth.mangadex.dev/realms/mangadex/protocol/openid-connect/token',
             },
             async successHandler(accessToken, refreshToken) {
                 await saveAccessToken(stateManager, accessToken, refreshToken);
             },
-            scopes: ["email", "openid"],
+            scopes: ['email', 'openid'],
         });
     }
     return App.createDUINavigationButton({
-        id: "account_settings",
-        label: "Session Info",
+        id: 'account_settings',
+        label: 'Session Info',
         form: App.createDUIForm({
             onSubmit: async () => undefined,
             sections: async () => {
@@ -4364,272 +4238,178 @@ async function accountSettings(stateManager, requestManager) {
                     return [
                         App.createDUISection({
                             isHidden: false,
-                            id: "not_logged_in_section",
+                            id: 'not_logged_in_section',
                             rows: async () => [
                                 App.createDUILabel({
-                                    id: "not_logged_in",
-                                    label: "Not Logged In",
-                                }),
-                            ],
-                        }),
+                                    id: 'not_logged_in',
+                                    label: 'Not Logged In'
+                                })
+                            ]
+                        })
                     ];
                 }
                 return [
                     App.createDUISection({
                         isHidden: false,
-                        id: "introspect",
+                        id: 'introspect',
                         rows: async () => {
                             return Object.keys(accessToken.tokenBody).map((key) => {
                                 const value = accessToken.tokenBody[key];
                                 return App.createDUIMultilineLabel({
                                     id: key,
                                     label: key,
-                                    value: Array.isArray(value) ? value.join("\n") : `${value}`,
+                                    value: Array.isArray(value) ? value.join('\n') : `${value}`
                                 });
                             });
-                        },
+                        }
                     }),
                     App.createDUISection({
                         isHidden: false,
-                        id: "refresh_button_section",
+                        id: 'refresh_button_section',
                         rows: async () => [
                             App.createDUIButton({
-                                id: "refresh_token_button",
-                                label: "Refresh Token",
+                                id: 'refresh_token_button',
+                                label: 'Refresh Token',
                                 onTap: async () => {
-                                    const response = await authEndpointRequest(requestManager, "refresh", {
-                                        token: accessToken.refreshToken,
-                                    });
+                                    const response = await authEndpointRequest(requestManager, 'refresh', { token: accessToken.refreshToken });
                                     await saveAccessToken(stateManager, response.token.session, response.token.refresh);
-                                },
+                                }
                             }),
                             App.createDUIButton({
-                                id: "logout_button",
-                                label: "Logout",
+                                id: 'logout_button',
+                                label: 'Logout',
                                 onTap: async () => {
-                                    await authEndpointRequest(requestManager, "logout", {});
+                                    await authEndpointRequest(requestManager, 'logout', {});
                                     await saveAccessToken(stateManager, undefined, undefined);
-                                },
-                            }),
-                        ],
-                    }),
+                                }
+                            })
+                        ]
+                    })
                 ];
-            },
-        }),
+            }
+        })
     });
 }
 exports.accountSettings = accountSettings;
 function thumbnailSettings(stateManager) {
     return App.createDUINavigationButton({
-        id: "thumbnail_settings",
-        label: "Thumbnail Quality",
+        id: 'thumbnail_settings',
+        label: 'Thumbnail Quality',
         form: App.createDUIForm({
-            onSubmit: async (values) => {
-                await Promise.all([
-                    stateManager.store("homepage_thumbnail", values.homepage_thumbnail[0]),
-                    stateManager.store("search_thumbnail", values.search_thumbnail[0]),
-                    stateManager.store("manga_thumbnail", values.manga_thumbnail[0]),
-                ]);
-            },
             sections: async () => [
                 App.createDUISection({
                     isHidden: false,
-                    id: "thumbnail",
+                    id: 'thumbnail',
                     rows: async () => {
                         const values_1 = await Promise.all([
                             getHomepageThumbnail(stateManager),
                             getSearchThumbnail(stateManager),
-                            getMangaThumbnail(stateManager),
+                            getMangaThumbnail(stateManager)
                         ]);
                         return [
                             App.createDUISelect({
-                                id: "homepage_thumbnail",
-                                label: "Homepage Thumbnail",
+                                id: 'homepage_thumbnail',
+                                label: 'Homepage Thumbnail',
                                 options: MangaDexHelper_1.MDImageQuality.getEnumList(),
                                 labelResolver: async (option_1) => MangaDexHelper_1.MDImageQuality.getName(option_1),
                                 value: App.createDUIBinding({
                                     get: async () => [values_1[0]],
+                                    set: async (newValue) => {
+                                        await stateManager.store('homepage_thumbnail', newValue[0]);
+                                    }
                                 }),
                                 allowsMultiselect: false,
                             }),
                             App.createDUISelect({
-                                id: "search_thumbnail",
-                                label: "Search Thumbnail",
+                                id: 'search_thumbnail',
+                                label: 'Search Thumbnail',
                                 options: MangaDexHelper_1.MDImageQuality.getEnumList(),
                                 labelResolver: async (option_3) => MangaDexHelper_1.MDImageQuality.getName(option_3),
                                 value: App.createDUIBinding({
                                     get: async () => [values_1[1]],
+                                    set: async (newValue) => {
+                                        await stateManager.store('search_thumbnail', newValue[0]);
+                                    },
                                 }),
                                 allowsMultiselect: false,
                             }),
                             App.createDUISelect({
-                                id: "manga_thumbnail",
-                                label: "Manga Thumbnail",
+                                id: 'manga_thumbnail',
+                                label: 'Manga Thumbnail',
                                 options: MangaDexHelper_1.MDImageQuality.getEnumList(),
                                 labelResolver: async (option_5) => MangaDexHelper_1.MDImageQuality.getName(option_5),
                                 value: App.createDUIBinding({
                                     get: async () => [values_1[2]],
+                                    set: async (newValue) => {
+                                        await stateManager.store('manga_thumbnail', newValue[0]);
+                                    }
                                 }),
                                 allowsMultiselect: false,
-                            }),
+                            })
                         ];
-                    },
-                }),
-            ],
-        }),
+                    }
+                })
+            ]
+        })
     });
 }
 exports.thumbnailSettings = thumbnailSettings;
 function resetSettings(stateManager) {
     return App.createDUIButton({
-        id: "reset",
-        label: "Reset to Default",
+        id: 'reset',
+        label: 'Reset to Default',
         onTap: async () => {
             await Promise.all([
-                stateManager.store("languages", null),
-                stateManager.store("ratings", null),
-                stateManager.store("data_saver", null),
-                stateManager.store("skip_same_chapter", null),
-                stateManager.store("homepage_thumbnail", null),
-                stateManager.store("search_thumbnail", null),
-                stateManager.store("manga_thumbnail", null),
-                stateManager.store("recommendedIds", null),
-                stateManager.store("enabled_homepage_sections", null),
-                stateManager.store("enabled_recommendations", null),
-                stateManager.store("amount_of_recommendations", null),
+                stateManager.store('languages', null),
+                stateManager.store('ratings', null),
+                stateManager.store('data_saver', null),
+                stateManager.store('skip_same_chapter', null),
+                stateManager.store('homepage_thumbnail', null),
+                stateManager.store('search_thumbnail', null),
+                stateManager.store('manga_thumbnail', null),
+                stateManager.store('enabled_homepage_sections', null)
             ]);
-        },
+        }
     });
 }
 exports.resetSettings = resetSettings;
 function homepageSettings(stateManager) {
     return App.createDUINavigationButton({
-        id: "homepage_settings",
-        label: "Homepage Settings",
+        id: 'homepage_settings',
+        label: 'Homepage Settings',
         form: App.createDUIForm({
-            onSubmit: async (values) => {
-                await Promise.all([
-                    stateManager.store("enabled_homepage_sections", values.enabled_homepage_sections),
-                    // The `as boolean` seems required to prevent Paperback from throwing
-                    // `Invalid type for key value; expected `Bool` got `Optional<JSValue>``
-                    stateManager.store("enabled_recommendations", values.enabled_recommendations),
-                    stateManager.store("amount_of_recommendations", values.amount_of_recommendations),
-                    (0, MangaDexSimilarManga_1.sliceRecommendedIds)(stateManager, values.amount_of_recommendations),
-                ]);
-            },
             sections: async () => [
                 App.createDUISection({
                     isHidden: false,
-                    id: "homepage_sections_section",
+                    id: 'homepage_sections_section',
                     //footer: 'Which sections should be shown on the homepage',
                     rows: async () => {
                         const value = await getEnabledHomePageSections(stateManager);
                         return [
                             App.createDUISelect({
-                                id: "enabled_homepage_sections",
-                                label: "Homepage sections",
+                                id: 'enabled_homepage_sections',
+                                label: 'Homepage sections',
                                 options: MangaDexHelper_1.MDHomepageSections.getEnumList(),
                                 allowsMultiselect: true,
                                 labelResolver: async (option_1) => MangaDexHelper_1.MDHomepageSections.getName(option_1),
                                 value: App.createDUIBinding({
                                     get: async () => value ?? [],
-                                }),
-                            }),
+                                    set: async (newValue) => {
+                                        await stateManager.store('enabled_homepage_sections', newValue);
+                                    }
+                                })
+                            })
                         ];
-                    },
-                }),
-                App.createDUISection({
-                    isHidden: false,
-                    id: "recommendations_settings_section",
-                    header: "Titles recommendations",
-                    footer: "Recommendation are based on recently read chapters and shown on the homepage",
-                    rows: async () => {
-                        const values_1 = await Promise.all([
-                            getEnabledRecommendations(stateManager),
-                            getAmountRecommendations(stateManager),
-                        ]);
-                        return [
-                            App.createDUISwitch({
-                                id: "enabled_recommendations",
-                                label: "Enable recommendations",
-                                value: App.createDUIBinding({
-                                    get: async () => values_1[0] ?? false,
-                                }),
-                            }),
-                            App.createDUIStepper({
-                                id: "amount_of_recommendations",
-                                label: "Amount of recommendation",
-                                min: 1,
-                                max: 15,
-                                step: 1,
-                                value: App.createDUIBinding({
-                                    get: async () => values_1[1] ?? 5,
-                                }),
-                            }),
-                            App.createDUIButton({
-                                id: "reset_recommended_ids",
-                                label: "Reset recommended titles",
-                                onTap: async () => {
-                                    await stateManager.store("recommendedIds", null);
-                                },
-                            }),
-                        ];
-                    },
-                }),
-            ],
-        }),
+                    }
+                })
+            ]
+        })
     });
 }
 exports.homepageSettings = homepageSettings;
 
 }).call(this)}).call(this,require("buffer").Buffer)
-},{"./MangaDexHelper":72,"./MangaDexSimilarManga":75,"buffer":61}],75:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.addRecommendedId = exports.sliceRecommendedIds = exports.getRecommendedIds = void 0;
-const MangaDexSettings_1 = require("./MangaDexSettings");
-const getRecommendedIds = async (stateManager) => {
-    // Return the list of ids that should be used for recommendations
-    // We don't need to check the length of the list. If the max length was changed by the user,
-    // the list should have been modified
-    return (await stateManager.retrieve('recommendedIds')) ?? [];
-};
-exports.getRecommendedIds = getRecommendedIds;
-const sliceRecommendedIds = async (stateManager, amount) => {
-    // Only keep `amount` elements in the recommendation list
-    const recommendedIds = await (0, exports.getRecommendedIds)(stateManager);
-    stateManager.store('recommendedIds', recommendedIds.slice(0, amount));
-};
-exports.sliceRecommendedIds = sliceRecommendedIds;
-const addRecommendedId = async (stateManager, mangaId) => {
-    // Add an id to the list of manga that should be used for recommendations
-    const recommendedIds = await (0, exports.getRecommendedIds)(stateManager);
-    // If the id is already in the list, we remove it to put it at the beginning
-    const index = recommendedIds.indexOf(mangaId, 0);
-    if (index > -1) {
-        recommendedIds.splice(index, 1);
-    }
-    // We add the id at the beginning of list
-    recommendedIds.unshift(mangaId);
-    // We only keep the right amount of titles in order to prevent the list from being to large
-    stateManager.store('recommendedIds', recommendedIds.slice(0, await (0, MangaDexSettings_1.getAmountRecommendations)(stateManager)));
-};
-exports.addRecommendedId = addRecommendedId;
-/*
-async removeRecommendedId(id: string): Promise<void>{
-    const recommendedIds: string[] = await this.getRecommendedIds()
-    
-    // If the id is already in the list, we put it at the end
-    const index = recommendedIds.indexOf(id, 0)
-    if (index > -1) {
-        recommendedIds.splice(index, 1)
-    }
-    
-    this.stateManager.store('recommendedIds', recommendedIds)
-}
-*/
-
-},{"./MangaDexSettings":74}],76:[function(require,module,exports){
+},{"./MangaDexHelper":72,"buffer":61}],75:[function(require,module,exports){
 module.exports=[
   {
     "result": "ok",
