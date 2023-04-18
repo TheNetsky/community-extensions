@@ -14,10 +14,11 @@ import {
     Response,
     ChapterProviding,
     MangaProviding,
-    Searchable,
+    SearchResultsProviding,
     DUISection,
     HomeSectionType,
-    SourceIntents
+    SourceIntents,
+    HomePageSectionsProviding
 } from '@paperback/types'
 
 import { NHSortOrders } from './NHentaiHelper'
@@ -60,7 +61,7 @@ export const NHentaiInfo: SourceInfo = {
 }
 
 
-export class NHentai implements Searchable, MangaProviding, ChapterProviding {
+export class NHentai implements SearchResultsProviding, MangaProviding, ChapterProviding, HomePageSectionsProviding {
     readonly requestManager: RequestManager = App.createRequestManager({
         requestsPerSecond: 3,
         requestTimeout: 15000,
@@ -90,7 +91,7 @@ export class NHentai implements Searchable, MangaProviding, ChapterProviding {
             header: 'Source Settings',
             rows: () => Promise.resolve([
                 settings(this.stateManager),
-                resetSettings(this.stateManager),
+                resetSettings(this.stateManager)
             ]),
             isHidden: false
         }))
@@ -199,7 +200,7 @@ export class NHentai implements Searchable, MangaProviding, ChapterProviding {
                     title: 'New Uploads',
                     containsMoreItems: true,
                     type: HomeSectionType.singleRowNormal
-                }),
+                })
             },
             {
                 request: App.createRequest({
@@ -211,7 +212,7 @@ export class NHentai implements Searchable, MangaProviding, ChapterProviding {
                     title: 'Popular Today',
                     containsMoreItems: true,
                     type: HomeSectionType.singleRowNormal
-                }),
+                })
             },
             {
                 request: App.createRequest({
@@ -223,7 +224,7 @@ export class NHentai implements Searchable, MangaProviding, ChapterProviding {
                     title: 'Popular Weekly',
                     containsMoreItems: true,
                     type: HomeSectionType.singleRowNormal
-                }),
+                })
             },
             {
                 request: App.createRequest({
@@ -279,7 +280,7 @@ export class NHentai implements Searchable, MangaProviding, ChapterProviding {
     }
 
     CloudFlareError(status: number): void {
-        if (status > 400) {
+        if (status == 503 || status == 403) {
             throw new Error(`CLOUDFLARE BYPASS ERROR:\nPlease go to Settings > Sources > ${NHentaiInfo.name}> and press Cloudflare Bypass`)
         }
     }

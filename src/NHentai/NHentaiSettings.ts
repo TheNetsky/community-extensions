@@ -36,7 +36,7 @@ export const settings = (stateManager: SourceStateManager): DUINavigationButton 
                             await Promise.all([
                                 getLanguages(stateManager),
                                 getSortOrders(stateManager),
-                                getExtraArgs(stateManager),
+                                getExtraArgs(stateManager)
                             ])
                             return await [
                                 App.createDUISelect({
@@ -46,9 +46,9 @@ export const settings = (stateManager: SourceStateManager): DUINavigationButton 
                                     labelResolver: async (option_1) => NHLanguages.getName(option_1),
                                     value: App.createDUIBinding({
                                         get: () => getLanguages(stateManager),
-                                        set: async (newValue_1) => await stateManager.store('languages', newValue_1)
+                                        set: async (newValue) => await stateManager.store('languages', newValue)
                                     }),
-                                    allowsMultiselect: false,
+                                    allowsMultiselect: false
                                 }),
 
                                 App.createDUISelect({
@@ -58,9 +58,9 @@ export const settings = (stateManager: SourceStateManager): DUINavigationButton 
                                     labelResolver: async (option_3) => NHSortOrders.getName(option_3),
                                     value: App.createDUIBinding({
                                         get: () => getSortOrders(stateManager),
-                                        set: async (newValue_3) => await stateManager.store('sort_order', newValue_3)
+                                        set: async (newValue) => await stateManager.store('sort_order', newValue)
                                     }),
-                                    allowsMultiselect: false,
+                                    allowsMultiselect: false
                                 }),
 
                                 App.createDUIInputField({
@@ -68,7 +68,7 @@ export const settings = (stateManager: SourceStateManager): DUINavigationButton 
                                     label: 'Additional arguments',
                                     value: App.createDUIBinding({
                                         get: () => getExtraArgs(stateManager),
-                                        set: async (newValue_5) => await stateManager.store('extra_args', newValue_5)
+                                        set: async (newValue) => await stateManager.store('extra_args', newValue)
                                     })
                                 })
                             ]

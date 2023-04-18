@@ -21,6 +21,10 @@ module.exports = {
             'error',
             4
         ],
+        'linebreak-style': [
+            'error',
+            'unix'
+        ],
         'quotes': [
             'error',
             'single'
@@ -29,6 +33,8 @@ module.exports = {
             'error',
             'never'
         ],
+        'comma-dangle': 'off',
+        '@typescript-eslint/comma-dangle': 'error',
         'prefer-arrow-callback': 'error',
         'modules-newline/import-declaration-newline': 'error',
         'modules-newline/export-declaration-newline': 'error'

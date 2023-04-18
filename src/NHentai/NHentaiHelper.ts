@@ -31,7 +31,7 @@ class NHLanguagesClass {
             name: 'Chinese',
             NHCode: 'chinese',
             lang: '🇨🇳'
-        },
+        }
     ]
 
     constructor() {
