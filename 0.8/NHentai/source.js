@@ -146,7 +146,7 @@ __exportStar(require("./SourceInfo"), exports);
 __exportStar(require("./HomeSectionType"), exports);
 __exportStar(require("./PaperbackExtensionBase"), exports);
 
-},{"./Badge":1,"./ByteArray":2,"./HomeSectionType":3,"./PaperbackExtensionBase":4,"./Source":5,"./SourceInfo":6,"./interfaces":13}],8:[function(require,module,exports){
+},{"./Badge":1,"./ByteArray":2,"./HomeSectionType":3,"./PaperbackExtensionBase":4,"./Source":5,"./SourceInfo":6,"./interfaces":15}],8:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 
@@ -168,6 +168,14 @@ Object.defineProperty(exports, "__esModule", { value: true });
 
 },{}],13:[function(require,module,exports){
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+
+},{}],14:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+
+},{}],15:[function(require,module,exports){
+"use strict";
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     var desc = Object.getOwnPropertyDescriptor(m, k);
@@ -184,20 +192,14 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 __exportStar(require("./ChapterProviding"), exports);
-__exportStar(require("./Searchable"), exports);
-__exportStar(require("./Requestable"), exports);
-__exportStar(require("./MangaProviding"), exports);
+__exportStar(require("./CloudflareBypassRequestProviding"), exports);
+__exportStar(require("./HomePageSectionsProviding"), exports);
 __exportStar(require("./MangaProgressProviding"), exports);
+__exportStar(require("./MangaProviding"), exports);
+__exportStar(require("./RequestManagerProviding"), exports);
+__exportStar(require("./SearchResultsProviding"), exports);
 
-},{"./ChapterProviding":8,"./MangaProgressProviding":9,"./MangaProviding":10,"./Requestable":11,"./Searchable":12}],14:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-
-},{}],15:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-
-},{}],16:[function(require,module,exports){
+},{"./ChapterProviding":8,"./CloudflareBypassRequestProviding":9,"./HomePageSectionsProviding":10,"./MangaProgressProviding":11,"./MangaProviding":12,"./RequestManagerProviding":13,"./SearchResultsProviding":14}],16:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 
@@ -367,6 +369,14 @@ Object.defineProperty(exports, "__esModule", { value: true });
 
 },{}],58:[function(require,module,exports){
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+
+},{}],59:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+
+},{}],60:[function(require,module,exports){
+"use strict";
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     var desc = Object.getOwnPropertyDescriptor(m, k);
@@ -426,7 +436,7 @@ __exportStar(require("./Exports/TagSection"), exports);
 __exportStar(require("./Exports/TrackedMangaChapterReadAction"), exports);
 __exportStar(require("./Exports/TrackerActionQueue"), exports);
 
-},{"./DynamicUI/Exports/DUIBinding":15,"./DynamicUI/Exports/DUIForm":16,"./DynamicUI/Exports/DUIFormRow":17,"./DynamicUI/Exports/DUISection":18,"./DynamicUI/Rows/Exports/DUIButton":19,"./DynamicUI/Rows/Exports/DUIHeader":20,"./DynamicUI/Rows/Exports/DUIInputField":21,"./DynamicUI/Rows/Exports/DUILabel":22,"./DynamicUI/Rows/Exports/DUILink":23,"./DynamicUI/Rows/Exports/DUIMultilineLabel":24,"./DynamicUI/Rows/Exports/DUINavigationButton":25,"./DynamicUI/Rows/Exports/DUIOAuthButton":26,"./DynamicUI/Rows/Exports/DUISecureInputField":27,"./DynamicUI/Rows/Exports/DUISelect":28,"./DynamicUI/Rows/Exports/DUIStepper":29,"./DynamicUI/Rows/Exports/DUISwitch":30,"./Exports/Chapter":31,"./Exports/ChapterDetails":32,"./Exports/Cookie":33,"./Exports/HomeSection":34,"./Exports/IconText":35,"./Exports/MangaInfo":36,"./Exports/MangaProgress":37,"./Exports/MangaUpdates":38,"./Exports/PBCanvas":39,"./Exports/PBImage":40,"./Exports/PagedResults":41,"./Exports/PartialSourceManga":42,"./Exports/RawData":43,"./Exports/Request":44,"./Exports/RequestManager":45,"./Exports/Response":46,"./Exports/SearchField":47,"./Exports/SearchRequest":48,"./Exports/SecureStateManager":49,"./Exports/SourceCookieStore":50,"./Exports/SourceInterceptor":51,"./Exports/SourceManga":52,"./Exports/SourceStateManager":53,"./Exports/Tag":54,"./Exports/TagSection":55,"./Exports/TrackedMangaChapterReadAction":56,"./Exports/TrackerActionQueue":57}],59:[function(require,module,exports){
+},{"./DynamicUI/Exports/DUIBinding":17,"./DynamicUI/Exports/DUIForm":18,"./DynamicUI/Exports/DUIFormRow":19,"./DynamicUI/Exports/DUISection":20,"./DynamicUI/Rows/Exports/DUIButton":21,"./DynamicUI/Rows/Exports/DUIHeader":22,"./DynamicUI/Rows/Exports/DUIInputField":23,"./DynamicUI/Rows/Exports/DUILabel":24,"./DynamicUI/Rows/Exports/DUILink":25,"./DynamicUI/Rows/Exports/DUIMultilineLabel":26,"./DynamicUI/Rows/Exports/DUINavigationButton":27,"./DynamicUI/Rows/Exports/DUIOAuthButton":28,"./DynamicUI/Rows/Exports/DUISecureInputField":29,"./DynamicUI/Rows/Exports/DUISelect":30,"./DynamicUI/Rows/Exports/DUIStepper":31,"./DynamicUI/Rows/Exports/DUISwitch":32,"./Exports/Chapter":33,"./Exports/ChapterDetails":34,"./Exports/Cookie":35,"./Exports/HomeSection":36,"./Exports/IconText":37,"./Exports/MangaInfo":38,"./Exports/MangaProgress":39,"./Exports/MangaUpdates":40,"./Exports/PBCanvas":41,"./Exports/PBImage":42,"./Exports/PagedResults":43,"./Exports/PartialSourceManga":44,"./Exports/RawData":45,"./Exports/Request":46,"./Exports/RequestManager":47,"./Exports/Response":48,"./Exports/SearchField":49,"./Exports/SearchRequest":50,"./Exports/SecureStateManager":51,"./Exports/SourceCookieStore":52,"./Exports/SourceInterceptor":53,"./Exports/SourceManga":54,"./Exports/SourceStateManager":55,"./Exports/Tag":56,"./Exports/TagSection":57,"./Exports/TrackedMangaChapterReadAction":58,"./Exports/TrackerActionQueue":59}],61:[function(require,module,exports){
 "use strict";
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
@@ -447,7 +457,7 @@ __exportStar(require("./generated/_exports"), exports);
 __exportStar(require("./base/index"), exports);
 __exportStar(require("./compat/DyamicUI"), exports);
 
-},{"./base/index":7,"./compat/DyamicUI":14,"./generated/_exports":58}],60:[function(require,module,exports){
+},{"./base/index":7,"./compat/DyamicUI":16,"./generated/_exports":60}],62:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.NHentai = exports.NHentaiInfo = void 0;
@@ -507,7 +517,7 @@ class NHentai {
             header: 'Source Settings',
             rows: () => Promise.resolve([
                 (0, NHentaiSettings_1.settings)(this.stateManager),
-                (0, NHentaiSettings_1.resetSettings)(this.stateManager),
+                (0, NHentaiSettings_1.resetSettings)(this.stateManager)
             ]),
             isHidden: false
         }));
@@ -602,7 +612,7 @@ class NHentai {
                     title: 'New Uploads',
                     containsMoreItems: true,
                     type: types_1.HomeSectionType.singleRowNormal
-                }),
+                })
             },
             {
                 request: App.createRequest({
@@ -614,7 +624,7 @@ class NHentai {
                     title: 'Popular Today',
                     containsMoreItems: true,
                     type: types_1.HomeSectionType.singleRowNormal
-                }),
+                })
             },
             {
                 request: App.createRequest({
@@ -626,7 +636,7 @@ class NHentai {
                     title: 'Popular Weekly',
                     containsMoreItems: true,
                     type: types_1.HomeSectionType.singleRowNormal
-                }),
+                })
             },
             {
                 request: App.createRequest({
@@ -672,7 +682,7 @@ class NHentai {
         });
     }
     CloudFlareError(status) {
-        if (status > 400) {
+        if (status == 503 || status == 403) {
             throw new Error(`CLOUDFLARE BYPASS ERROR:\nPlease go to Settings > Sources > ${exports.NHentaiInfo.name}> and press Cloudflare Bypass`);
         }
     }
@@ -726,7 +736,7 @@ class NHentai {
 }
 exports.NHentai = NHentai;
 
-},{"./NHentaiHelper":61,"./NHentaiParser":62,"./NHentaiSettings":63,"@paperback/types":59}],61:[function(require,module,exports){
+},{"./NHentaiHelper":63,"./NHentaiParser":64,"./NHentaiSettings":65,"@paperback/types":61}],63:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.NHSortOrders = exports.NHLanguages = void 0;
@@ -757,7 +767,7 @@ class NHLanguagesClass {
                 name: 'Chinese',
                 NHCode: 'chinese',
                 lang: '🇨🇳'
-            },
+            }
         ];
         // Sorts the languages based on name
         this.Languages = this.Languages.sort((a, b) => a.name > b.name ? 1 : -1);
@@ -830,7 +840,7 @@ class NHSortOrderClass {
 }
 exports.NHSortOrders = new NHSortOrderClass();
 
-},{}],62:[function(require,module,exports){
+},{}],64:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.parseSearch = exports.parseChapterDetails = exports.parseChapters = exports.parseMangaDetails = void 0;
@@ -914,7 +924,7 @@ const getLanguage = (gallery) => {
     return '';
 };
 
-},{"./NHentaiHelper":61}],63:[function(require,module,exports){
+},{"./NHentaiHelper":63}],65:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.resetSettings = exports.settings = exports.getExtraArgs = exports.getSortOrders = exports.getLanguages = void 0;
@@ -945,7 +955,7 @@ const settings = (stateManager) => {
                             await Promise.all([
                                 (0, exports.getLanguages)(stateManager),
                                 (0, exports.getSortOrders)(stateManager),
-                                (0, exports.getExtraArgs)(stateManager),
+                                (0, exports.getExtraArgs)(stateManager)
                             ]);
                             return await [
                                 App.createDUISelect({
@@ -955,9 +965,9 @@ const settings = (stateManager) => {
                                     labelResolver: async (option_1) => NHentaiHelper_1.NHLanguages.getName(option_1),
                                     value: App.createDUIBinding({
                                         get: () => (0, exports.getLanguages)(stateManager),
-                                        set: async (newValue_1) => await stateManager.store('languages', newValue_1)
+                                        set: async (newValue) => await stateManager.store('languages', newValue)
                                     }),
-                                    allowsMultiselect: false,
+                                    allowsMultiselect: false
                                 }),
                                 App.createDUISelect({
                                     id: 'sort_order',
@@ -966,16 +976,16 @@ const settings = (stateManager) => {
                                     labelResolver: async (option_3) => NHentaiHelper_1.NHSortOrders.getName(option_3),
                                     value: App.createDUIBinding({
                                         get: () => (0, exports.getSortOrders)(stateManager),
-                                        set: async (newValue_3) => await stateManager.store('sort_order', newValue_3)
+                                        set: async (newValue) => await stateManager.store('sort_order', newValue)
                                     }),
-                                    allowsMultiselect: false,
+                                    allowsMultiselect: false
                                 }),
                                 App.createDUIInputField({
                                     id: 'extra_args',
                                     label: 'Additional arguments',
                                     value: App.createDUIBinding({
                                         get: () => (0, exports.getExtraArgs)(stateManager),
-                                        set: async (newValue_5) => await stateManager.store('extra_args', newValue_5)
+                                        set: async (newValue) => await stateManager.store('extra_args', newValue)
                                     })
                                 })
                             ];
@@ -1003,5 +1013,5 @@ const resetSettings = (stateManager) => {
 };
 exports.resetSettings = resetSettings;
 
-},{"./NHentaiHelper":61}]},{},[60])(60)
+},{"./NHentaiHelper":63}]},{},[62])(62)
 });
