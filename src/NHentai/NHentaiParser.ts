@@ -20,10 +20,12 @@ export const parseMangaDetails = (data: Gallery): SourceManga => {
 
     const tags: Tag[] = []
     for (const tag of data.tags) {
-        if (tag.type === 'tag')
-            tags.push(App.createTag({ id: tag.id.toString(), label: tag.name }))
+        if (tag.type !== 'tag') continue
+
+        tags.push(App.createTag({ id: tag.name, label: capitalizeTags(tag.name) }))
     }
-    
+
+
     return App.createSourceManga({
         id: data.id.toString(),
         mangaInfo: App.createMangaInfo({
@@ -61,18 +63,29 @@ export const parseChapterDetails = (data: Gallery, mangaId: string): ChapterDeta
 
 export const parseSearch = (data: QueryResponse): PartialSourceManga[] => {
     const tiles: PartialSourceManga[] = []
+    const collectedIds: string[] = []
+
     for (const gallery of data.result) {
+
+        if (collectedIds.includes(gallery.id.toString())) continue
         tiles.push(App.createPartialSourceManga({
             image: `https://t.nhentai.net/galleries/${gallery.media_id}/cover.${typeOfImage(gallery.images.cover)}`,
             title: gallery.title.pretty,
             mangaId: gallery.id.toString(),
             subtitle: NHLanguages.getName(getLanguage(gallery))
         }))
+        collectedIds.push(gallery.id.toString())
     }
     return tiles
 }
 
 // Utility
+function capitalizeTags(str: string) {
+    return str.split(' ').map(word => {
+        return word.charAt(0).toUpperCase() + word.slice(1)
+    }).join(' ')
+}
+
 const typeMap: { [key: string]: string; } = { 'j': 'jpg', 'p': 'png', 'g': 'gif' }
 
 const typeOfImage = (image: ImagePageObject): string => {

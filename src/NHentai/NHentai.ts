@@ -18,7 +18,9 @@ import {
     DUISection,
     HomeSectionType,
     SourceIntents,
-    HomePageSectionsProviding
+    HomePageSectionsProviding,
+    Tag,
+    TagSection
 } from '@paperback/types'
 
 import { NHSortOrders } from './NHentaiHelper'
@@ -36,10 +38,12 @@ import {
     settings
 } from './NHentaiSettings'
 
+import { popularTags } from './tags.json'
+
 const NHENTAI_URL = 'https://nhentai.net'
 
 export const NHentaiInfo: SourceInfo = {
-    version: '4.0.0',
+    version: '4.0.1',
     name: 'nhentai',
     icon: 'icon.png',
     author: 'NotMarek & Netsky',
@@ -47,7 +51,7 @@ export const NHentaiInfo: SourceInfo = {
     description: 'Extension which pulls content from nHentai.',
     contentRating: ContentRating.ADULT,
     websiteBaseURL: NHENTAI_URL,
-    intents: SourceIntents.MANGA_CHAPTERS | SourceIntents.HOMEPAGE_SECTIONS | SourceIntents.CLOUDFLARE_BYPASS_REQUIRED |SourceIntents.SETTINGS_UI,
+    intents: SourceIntents.MANGA_CHAPTERS | SourceIntents.HOMEPAGE_SECTIONS | SourceIntents.CLOUDFLARE_BYPASS_REQUIRED | SourceIntents.SETTINGS_UI,
     sourceTags: [
         {
             text: '18+',
@@ -135,6 +139,18 @@ export class NHentai implements SearchResultsProviding, MangaProviding, ChapterP
         return parseChapterDetails(jsonData, mangaId)
     }
 
+    async getSearchTags(): Promise<TagSection[]> {
+        const arrayTags: Tag[] = []
+
+        for (const tag of popularTags) {
+            const label = tag.label
+            const id = tag.id
+            arrayTags.push({ id: id, label: label })
+        }
+        const tagSections: TagSection[] = [App.createTagSection({ id: '0', label: 'Tags', tags: arrayTags.map(x => App.createTag(x)) })]
+        return tagSections
+    }
+
     async getSearchResults(query: SearchRequest, metadata: any): Promise<PagedResults> {
         const page: number = metadata?.page ?? 1
         const title: string = query.title ?? ''
@@ -168,11 +184,10 @@ export class NHentai implements SearchResultsProviding, MangaProviding, ChapterP
 
             // Normal search query
         } else {
-            const q: string = title + ' ' + this.generateQuery()
-            const [sort, query]: string[] = await this.sortOrder(q, this.stateManager) ?? ['', q]
+            const q: string = encodeURIComponent(`${title} ${query?.includedTags?.map((x: Tag) => ` +${x.id}`)} `) + await this.generateQuery()
 
             const request = App.createRequest({
-                url: `${NHENTAI_URL}/api/galleries/search?query=${encodeURIComponent(query ?? '')}&sort=${sort}&page=${page}`,
+                url: `${NHENTAI_URL}/api/galleries/search?query=${(q)}&page=${page}&sort=${await this.sortOrder(this.stateManager)}`,
                 method: 'GET'
             })
             const response = await this.requestManager.schedule(request, 1)
@@ -321,15 +336,9 @@ export class NHentai implements SearchResultsProviding, MangaProviding, ChapterP
         }
     }
 
-    async sortOrder(query: string, stateManager: SourceStateManager): Promise<string[]> {
-        const inQuery: string[] = NHSortOrders.containsShortcut(query)
-        if (inQuery[0]?.length !== 0) {
-            return [inQuery[0] ?? '', query.replace(inQuery[1] ?? '', '')]
-        }
-        else {
-            const sortOrder = (await stateManager.retrieve('sort_order') as string) ?? NHSortOrders.getDefault()
-            return [sortOrder, query]
-        }
+    async sortOrder(stateManager: SourceStateManager): Promise<string> {
+        const sortOrder = (await stateManager.retrieve('sort_order') as string) ?? NHSortOrders.getDefault()
+        return sortOrder
     }
 
     async extraArgs(stateManager: SourceStateManager): Promise<string> {
