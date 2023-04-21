@@ -468,7 +468,7 @@ const NHentaiSettings_1 = require("./NHentaiSettings");
 const tags_json_1 = require("./tags.json");
 const NHENTAI_URL = 'https://nhentai.net';
 exports.NHentaiInfo = {
-    version: '4.0.1',
+    version: '4.0.2',
     name: 'nhentai',
     icon: 'icon.png',
     author: 'NotMarek & Netsky',
@@ -860,13 +860,13 @@ const parseMangaDetails = (data) => {
     return App.createSourceManga({
         id: data.id.toString(),
         mangaInfo: App.createMangaInfo({
-            titles: [data.title.english, data.title.japanese, data.title.pretty],
+            titles: Object.values(data.title).filter(title => title !== null),
             artist: artist,
             author: artist,
             image: `https://t.nhentai.net/galleries/${data.media_id}/cover.${typeOfImage(data.images.cover)}`,
             status: 'Completed',
             tags: [App.createTagSection({ id: 'tags', label: 'Tags', tags: tags })],
-            desc: ''
+            desc: `Pages: ${data.num_pages}`
         })
     });
 };
