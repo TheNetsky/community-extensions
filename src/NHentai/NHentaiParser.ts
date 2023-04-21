@@ -25,17 +25,16 @@ export const parseMangaDetails = (data: Gallery): SourceManga => {
         tags.push(App.createTag({ id: tag.name, label: capitalizeTags(tag.name) }))
     }
 
-
     return App.createSourceManga({
         id: data.id.toString(),
         mangaInfo: App.createMangaInfo({
-            titles: [data.title.english, data.title.japanese, data.title.pretty],
+            titles: Object.values(data.title).filter(title => title !== null),
             artist: artist,
             author: artist,
             image: `https://t.nhentai.net/galleries/${data.media_id}/cover.${typeOfImage(data.images.cover)}`,
             status: 'Completed',
             tags: [App.createTagSection({ id: 'tags', label: 'Tags', tags: tags })],
-            desc: ''
+            desc: `Pages: ${data.num_pages}`
         })
     })
 }
