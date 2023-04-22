@@ -9,6 +9,8 @@ import {
     TagSection
 } from '@paperback/types'
 
+import { BTGenres } from './BatoToHelper'
+
 import {
     AES,
     enc
@@ -25,22 +27,30 @@ export const parseMangaDetails = ($: CheerioStatic, mangaId: string): SourceMang
         titles.push(decodeHTMLEntity(title))
     }
 
-    const image = $('.shadow-6').attr('src') ?? ''
-    const author = $('div.attr-item b:contains("Authors:") + span a').text().trim()
-    const artist = $('div.attr-item b:contains("Artists:") + span a').text().trim()
-    const description = $('.limit-html').text().trim() ?? ''
+    const image = $('div.attr-cover img').attr('src') ?? ''
+    const description = decodeHTMLEntity($('.limit-html').text().trim() ?? '')
+
+    const authorElement = $('div.attr-item b:contains("Authors")').next('span')
+    const author = authorElement.length ? authorElement.children().map((_, e) => {
+        return $(e).text().trim()
+    }).toArray().join(', ') : ''
+    
+    const artistElement = $('div.attr-item b:contains("Artists")').next('span')
+    const artist = artistElement.length ? artistElement.children().map((_, e) => {
+        return $(e).text().trim()
+    }).toArray().join(', ') : ''
 
     const arrayTags: Tag[] = []
-    for (const tag of $('div.attr-item b:contains("Genres:")').nextAll('span').toArray()) {
-        const label = $(tag).text().trim()
-        const id = encodeURI($(tag).text().trim())
+    for (const tag of $('div.attr-item b:contains("Genres")').next('span').children().toArray()) {
+        const label = $(tag).text().trim()  
+        const id = encodeURI(BTGenres.getParam(label) ?? label)
 
         if (!id || !label) continue
         arrayTags.push({ id: id, label: label })
     }
     const tagSections: TagSection[] = [App.createTagSection({ id: '0', label: 'genres', tags: arrayTags.map(x => App.createTag(x)) })]
 
-    const rawStatus = $('div.attr-item b:contains("Upload status:")').next('span').text().trim()
+    const rawStatus = $('div.attr-item b:contains("Upload status")').next('span').text().trim()
     let status = 'ONGOING'
     switch (rawStatus.toUpperCase()) {
         case 'ONGOING':
@@ -80,11 +90,12 @@ export const parseChapterList = ($: CheerioStatic): Chapter[] => {
         const chapterId: string = $('a', chapter).attr('href')?.replace(/\/$/, '')?.split('/').pop() ?? ''
         if (!chapterId) continue
 
-        const language = $('div.attr-item b:contains("Translated language:")').next('span').text().trim() ?? 'English'
+        const language = $('div.attr-item b:contains("Translated language")').next('span').text().trim() ?? 'Unknown'
         const timeAgo = $('i.ps-3', chapter).text().trim().split(' ')
         const chapNumRegex = title.match(/(\d+)(?:[-.]\d+)?/)
         let date = new Date()
 
+        if (timeAgo[1] == 'secs') date = new Date(Date.now() - 1000 * Number(timeAgo[0]))
         if (timeAgo[1] == 'mins') date = new Date(Date.now() - 1000 * 60 * Number(timeAgo[0]))
         if (timeAgo[1] == 'hours') date = new Date(Date.now() - 1000 * 3600 * Number(timeAgo[0]))
         if (timeAgo[1] == 'days') date = new Date(Date.now() - 1000 * 3600 * 24 * Number(timeAgo[0]))
@@ -114,7 +125,7 @@ export const parseChapterList = ($: CheerioStatic): Chapter[] => {
 export const parseChapterDetails = ($: CheerioStatic, mangaId: string, chapterId: string): ChapterDetails => {
     const pages: string[] = []
     // Get all of the pages
-    const scriptObj = $('script').toArray().find(obj => {
+    const scriptObj = $('script').toArray().find((obj: CheerioElement) => {
         const data = obj.children[0]?.data ?? ''
         return data.includes('batoPass') && data.includes('batoWord')
     })
@@ -158,13 +169,14 @@ export const parseHomeSections = ($: CheerioStatic, sectionCallback: (section: H
         const image: string = $('img', manga).first().attr('src') ?? ''
         const title: string = $('.item-title', manga).text().trim() ?? ''
         const id = $('a', manga).attr('href')?.replace('/series/', '')?.trim().split('/')[0] ?? ''
+        const subtitle: string = $('.item-volch', manga).text().trim() ?? ''
 
         if (!id || !title) continue
         popularSection_Array.push(App.createPartialSourceManga({
             image: image,
             title: decodeHTMLEntity(title),
             mangaId: id,
-            subtitle: undefined
+            subtitle: decodeHTMLEntity(subtitle)
         }))
     }
     popularSection.items = popularSection_Array
@@ -176,7 +188,7 @@ export const parseHomeSections = ($: CheerioStatic, sectionCallback: (section: H
         const image: string = $('img', manga).attr('src') ?? ''
         const title: string = $('.item-title', manga).text().trim() ?? ''
         const id = $('a', manga).attr('href')?.replace('/series/', '')?.trim().split('/')[0] ?? ''
-        const subtitle: string = $('i', $('item-volch', manga)).text().trim() ?? ''
+        const subtitle: string = $('.item-volch i', manga).text().trim() ?? ''
 
         if (!id || !title) continue
         latestSection_Array.push(App.createPartialSourceManga({
@@ -211,6 +223,18 @@ export const parseViewMore = ($: CheerioStatic): PartialSourceManga[] => {
     }
 
     return manga
+}
+
+export const parseTags = (): TagSection[] => {
+    const arrayTags: Tag[] = []
+    for (const label of BTGenres.getGenresList()) {
+        const id = encodeURI(BTGenres.getParam(label) ?? label)
+
+        if (!id || !label) continue
+        arrayTags.push({ id: id, label: label })
+    }
+    const tagSections: TagSection[] = [App.createTagSection({ id: '0', label: 'genres', tags: arrayTags.map(x => App.createTag(x)) })]
+    return tagSections
 }
 
 export const parseSearch = ($: CheerioStatic): PartialSourceManga[] => {
