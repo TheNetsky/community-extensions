@@ -15,7 +15,8 @@ import {
     SourceInfo,
     SourceIntents,
     SourceManga,
-    Tag
+    Tag,
+    TagSection
 } from '@paperback/types'
 
 import {
@@ -25,6 +26,7 @@ import {
     parseHomeSections,
     parseMangaDetails,
     parseSearch,
+    parseTags,
     parseViewMore
 } from './BatoToParser'
 
@@ -169,7 +171,7 @@ export class BatoTo implements SearchResultsProviding, MangaProviding, ChapterPr
             request = App.createRequest({
                 url: `${BATO_DOMAIN}/browse`,
                 method: 'GET',
-                param: `?genre=${query?.includedTags?.map((x: Tag) => x.id)[0]}&page=${page}`
+                param: `?genres=${query?.includedTags?.map((x: Tag) => x.id)[0]}&page=${page}`
             })
         }
 
@@ -182,6 +184,10 @@ export class BatoTo implements SearchResultsProviding, MangaProviding, ChapterPr
             results: manga,
             metadata
         })
+    }
+
+    async getSearchTags(): Promise<TagSection[]> {
+        return parseTags()
     }
 
     CloudFlareError(status: number): void {
