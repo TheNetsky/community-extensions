@@ -52,7 +52,7 @@ export const BatoToInfo: SourceInfo = {
 
 export class BatoTo implements SearchResultsProviding, MangaProviding, ChapterProviding, HomePageSectionsProviding {
 
-    constructor(private cheerio: CheerioAPI) { }
+    constructor(private cheerio: cheerio.CheerioAPI) { }
 
     requestManager = App.createRequestManager({
         requestsPerSecond: 4,

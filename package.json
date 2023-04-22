@@ -14,7 +14,7 @@
   "license": "GPL-3.0-or-later",
   "devDependencies": {
     "@tsconfig/recommended": "^1.0.1",
-    "@types/cheerio": "^0.22.21",
+    "@types/cheerio": "^0.22.31",
     "@types/crypto-js": "^4.1.1",
     "@typescript-eslint/eslint-plugin": "^5.1.0",
     "@typescript-eslint/parser": "^5.57.1",
