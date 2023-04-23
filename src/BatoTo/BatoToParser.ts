@@ -27,7 +27,6 @@ export const parseMangaDetails = ($: CheerioStatic, mangaId: string): SourceMang
         titles.push(decodeHTMLEntity(title))
     }
 
-    const image = $('div.attr-cover img').attr('src') ?? ''
     const description = decodeHTMLEntity($('.limit-html').text().trim() ?? '')
 
     const authorElement = $('div.attr-item b:contains("Authors")').next('span')
@@ -71,7 +70,7 @@ export const parseMangaDetails = ($: CheerioStatic, mangaId: string): SourceMang
         id: mangaId,
         mangaInfo: App.createMangaInfo({
             titles: titles,
-            image: image,
+            image: `https://thumbnail_url?mangaId=${mangaId}`,
             status: status,
             author: author,
             artist: artist,
@@ -255,6 +254,10 @@ export const parseSearch = ($: CheerioStatic): PartialSourceManga[] => {
         }))
     }
     return mangas
+}
+
+export const parseThumbnailUrl = ($: CheerioStatic): string => {
+    return $('div.attr-cover img').attr('src') ?? ''
 }
 
 export const isLastPage = ($: CheerioStatic): boolean => {

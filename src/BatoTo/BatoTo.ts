@@ -27,6 +27,7 @@ import {
     parseMangaDetails,
     parseSearch,
     parseTags,
+    parseThumbnailUrl,
     parseViewMore
 } from './BatoToParser'
 
@@ -65,6 +66,10 @@ export class BatoTo implements SearchResultsProviding, MangaProviding, ChapterPr
                         'referer': `${BATO_DOMAIN}/`,
                         'user-agent': await this.requestManager.getDefaultUserAgent()
                     }
+                }
+                if (request.url.includes('?mangaId=')) {
+                    const mangaId = request.url.split('?mangaId=')[1]
+                    if (mangaId) request.url = await this.getThumbnailUrl(mangaId)
                 }
                 return request
             },
@@ -188,6 +193,18 @@ export class BatoTo implements SearchResultsProviding, MangaProviding, ChapterPr
 
     async getSearchTags(): Promise<TagSection[]> {
         return parseTags()
+    }
+
+    async getThumbnailUrl(mangaId: string): Promise<string> {
+        const request = App.createRequest({
+            url: `${BATO_DOMAIN}/series/${mangaId}`,
+            method: 'GET'
+        })
+
+        const response = await this.requestManager.schedule(request, 1)
+        this.CloudFlareError(response.status)
+        const $ = this.cheerio.load(response.data as string)
+        return parseThumbnailUrl($)
     }
 
     CloudFlareError(status: number): void {
