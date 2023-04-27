@@ -9,7 +9,10 @@ import {
     TagSection
 } from '@paperback/types'
 
-import { BTGenres } from './BatoToHelper'
+import {
+    BTGenres,
+    BTLanguages
+} from './BatoToHelper'
 
 import {
     AES,
@@ -31,12 +34,12 @@ export const parseMangaDetails = ($: CheerioStatic, mangaId: string): SourceMang
     const description = decodeHTMLEntity($('.limit-html').text().trim() ?? '')
 
     const authorElement = $('div.attr-item b:contains("Authors")').next('span')
-    const author = authorElement.length ? authorElement.children().map((_, e) => {
+    const author = authorElement.length ? authorElement.children().map((_: number, e: CheerioElement) => {
         return $(e).text().trim()
     }).toArray().join(', ') : ''
     
     const artistElement = $('div.attr-item b:contains("Artists")').next('span')
-    const artist = artistElement.length ? artistElement.children().map((_, e) => {
+    const artist = artistElement.length ? artistElement.children().map((_: number, e: CheerioElement) => {
         return $(e).text().trim()
     }).toArray().join(', ') : ''
 
@@ -90,10 +93,12 @@ export const parseChapterList = ($: CheerioStatic): Chapter[] => {
         const chapterId: string = $('a', chapter).attr('href')?.replace(/\/$/, '')?.split('/').pop() ?? ''
         if (!chapterId) continue
 
-        const language = $('div.attr-item b:contains("Translated language")').next('span').text().trim() ?? 'Unknown'
+        let language = BTLanguages.getLangCode($('em').attr('data-lang') ?? '')
+        if (language === 'Unknown') language = '🇬🇧'
+
         const timeAgo = $('i.ps-3', chapter).text().trim().split(' ')
         const chapNumRegex = title.match(/(\d+)(?:[-.]\d+)?/)
-        let date = new Date()
+        let date = new Date(Date.now())
 
         if (timeAgo[1] == 'secs') date = new Date(Date.now() - 1000 * Number(timeAgo[0]))
         if (timeAgo[1] == 'mins') date = new Date(Date.now() - 1000 * 60 * Number(timeAgo[0]))
@@ -169,7 +174,9 @@ export const parseHomeSections = ($: CheerioStatic, sectionCallback: (section: H
         const image: string = $('img', manga).first().attr('src') ?? ''
         const title: string = $('.item-title', manga).text().trim() ?? ''
         const id = $('a', manga).attr('href')?.replace('/series/', '')?.trim().split('/')[0] ?? ''
-        const subtitle: string = $('.item-volch', manga).text().trim() ?? ''
+        const btcode = $('em', manga).attr('data-lang')
+        const lang: string = btcode ? BTLanguages.getLangCode(btcode): '🇬🇧'
+        const subtitle: string = lang + ' ' + $('.item-volch', manga).text().trim() ?? lang
 
         if (!id || !title) continue
         popularSection_Array.push(App.createPartialSourceManga({
@@ -188,7 +195,9 @@ export const parseHomeSections = ($: CheerioStatic, sectionCallback: (section: H
         const image: string = $('img', manga).attr('src') ?? ''
         const title: string = $('.item-title', manga).text().trim() ?? ''
         const id = $('a', manga).attr('href')?.replace('/series/', '')?.trim().split('/')[0] ?? ''
-        const subtitle: string = $('.item-volch i', manga).text().trim() ?? ''
+        const btcode = $('em', manga).attr('data-lang')
+        const lang: string = btcode ? BTLanguages.getLangCode(btcode): '🇬🇧'
+        const subtitle: string = lang + ' ' + $('.item-volch i', manga).text().trim() + lang ?? lang
 
         if (!id || !title) continue
         latestSection_Array.push(App.createPartialSourceManga({
@@ -206,10 +215,12 @@ export const parseViewMore = ($: CheerioStatic): PartialSourceManga[] => {
     const manga: PartialSourceManga[] = []
     const collectedIds: string[] = []
 
-    for (const obj of $('.item', $('#series-list')).toArray()) {
+    for (const obj of $('.item', '#series-list').toArray()) {
         const id = $('a', obj).attr('href')?.replace('/series/', '').trim().split('/')[0] ?? ''
         const title = $('.item-title', obj).text()
-        const subtitle = $('.visited', obj).text().trim()
+        const btcode = $('em', obj).attr('data-lang')
+        const lang: string = btcode ? BTLanguages.getLangCode(btcode): '🇬🇧'
+        const subtitle = lang + ' ' + $('.visited', obj).text().trim() 
         const image = $('img', obj).attr('src') ?? ''
 
         if (!id || !title || collectedIds.includes(id)) continue
@@ -239,11 +250,13 @@ export const parseTags = (): TagSection[] => {
 
 export const parseSearch = ($: CheerioStatic): PartialSourceManga[] => {
     const mangas: PartialSourceManga[] = []
-    for (const obj of $('.item', $('#series-list')).toArray()) {
+    for (const obj of $('.item', '#series-list').toArray()) {
         const id = $('.item-cover', obj).attr('href')?.replace('/series/', '')?.trim().split('/')[0] ?? ''
-        const title: string = $('.item-title', $(obj)).text() ?? ''
-        const subtitle = $('.visited', $(obj)).text().trim()
-        const image = $('img', $(obj)).attr('src') ?? ''
+        const title: string = $('.item-title', obj).text() ?? ''
+        const btcode = $('em', obj).attr('data-lang')
+        const lang: string = btcode ? BTLanguages.getLangCode(btcode): '🇬🇧'
+        const subtitle = lang + ' ' + $('.visited', obj).text().trim()
+        const image = $('img', obj).attr('src') ?? ''
 
         if (!id || !title) continue
 
