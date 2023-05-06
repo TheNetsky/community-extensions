@@ -976,7 +976,7 @@ const settings = (stateManager) => {
                                     id: 'languages',
                                     label: 'Languages',
                                     options: NHentaiHelper_1.NHLanguages.getNHCodeList(),
-                                    labelResolver: async (option_1) => NHentaiHelper_1.NHLanguages.getName(option_1),
+                                    labelResolver: async (option) => NHentaiHelper_1.NHLanguages.getName(option),
                                     value: App.createDUIBinding({
                                         get: () => (0, exports.getLanguages)(stateManager),
                                         set: async (newValue) => await stateManager.store('languages', newValue)
@@ -987,7 +987,7 @@ const settings = (stateManager) => {
                                     id: 'sort_order',
                                     label: 'Default search sort order',
                                     options: NHentaiHelper_1.NHSortOrders.getNHCodeList(),
-                                    labelResolver: async (option_3) => NHentaiHelper_1.NHSortOrders.getName(option_3),
+                                    labelResolver: async (option) => NHentaiHelper_1.NHSortOrders.getName(option),
                                     value: App.createDUIBinding({
                                         get: () => (0, exports.getSortOrders)(stateManager),
                                         set: async (newValue) => await stateManager.store('sort_order', newValue)

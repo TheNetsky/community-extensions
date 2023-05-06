@@ -3534,7 +3534,6 @@ class MangaDex {
                 await (0, MangaDexSettings_1.accountSettings)(this.stateManager, this.requestManager),
                 (0, MangaDexSettings_1.contentSettings)(this.stateManager),
                 (0, MangaDexSettings_1.thumbnailSettings)(this.stateManager),
-                (0, MangaDexSettings_1.homepageSettings)(this.stateManager),
                 (0, MangaDexSettings_1.resetSettings)(this.stateManager)
             ]
         });
@@ -3569,7 +3568,7 @@ class MangaDex {
             method: 'GET'
         });
         const response = await this.requestManager.schedule(request, 1);
-        const json = typeof response.data === 'string' ? JSON.parse(response.data) : response.data;
+        const json = (typeof response.data === 'string') ? JSON.parse(response.data) : response.data;
         return new MangaDexHelper_1.URLBuilder(this.MANGADEX_API)
             .addPathComponent('manga')
             .addQueryParameter('limit', 100)
@@ -3591,7 +3590,7 @@ class MangaDex {
             method: 'GET'
         });
         const response = await this.requestManager.schedule(request, 1);
-        const json = typeof response.data === 'string' ? JSON.parse(response.data) : response.data;
+        const json = (typeof response.data === 'string') ? JSON.parse(response.data) : response.data;
         for (const manga of json.data) {
             const mangaId = manga.id;
             const coverFileName = manga.relationships.filter((x) => x.type == 'cover_art').map((x) => x.attributes?.fileName)[0];
@@ -3612,7 +3611,7 @@ class MangaDex {
             method: 'GET'
         });
         const response = await this.requestManager.schedule(request, 1);
-        const json = typeof response.data === 'string' ? JSON.parse(response.data) : response.data;
+        const json = (typeof response.data === 'string') ? JSON.parse(response.data) : response.data;
         const mangaDetails = json.data.attributes;
         const titles = ([...Object.values(mangaDetails.title), ...mangaDetails.altTitles.flatMap((x) => Object.values(x))].map((x) => this.decodeHTMLEntity(x)).filter((x) => x));
         const desc = this.decodeHTMLEntity(mangaDetails.description.en)?.replace(/\[\/?[bus]]/g, ''); // Get rid of BBcode tags
@@ -3680,7 +3679,7 @@ class MangaDex {
                 method: 'GET'
             });
             const response = await this.requestManager.schedule(request, 1);
-            const json = typeof response.data === 'string' ? JSON.parse(response.data) : response.data;
+            const json = (typeof response.data === 'string') ? JSON.parse(response.data) : response.data;
             offset += 500;
             if (json.data === undefined)
                 throw new Error(`Failed to parse json results for ${mangaId}`);
@@ -3690,12 +3689,9 @@ class MangaDex {
                 const name = this.decodeHTMLEntity(chapterDetails.title);
                 const chapNum = Number(chapterDetails?.chapter);
                 const volume = Number(chapterDetails?.volume);
-                const langCode = MangaDexHelper_1.MDLanguages.getPBCode(chapterDetails.translatedLanguage);
+                const langCode = MangaDexHelper_1.MDLanguages.getFlagCode(chapterDetails.translatedLanguage);
                 const time = new Date(chapterDetails.publishAt);
-                const group = chapter.relationships
-                    .filter((x) => x.type == 'scanlation_group')
-                    .map((x) => x.attributes.name)
-                    .join(', ');
+                const group = chapter.relationships.filter((x) => x.type == 'scanlation_group').map((x) => x.attributes.name).join(', ');
                 const pages = Number(chapterDetails.pages);
                 const identifier = `${volume}-${chapNum}-${chapterDetails.translatedLanguage}`;
                 if (collectedChapters.has(identifier) && skipSameChapter)
@@ -3727,12 +3723,13 @@ class MangaDex {
     async getChapterDetails(mangaId, chapterId) {
         this.checkId(chapterId);
         const dataSaver = await (0, MangaDexSettings_1.getDataSaver)(this.stateManager);
+        const forcePort = await (0, MangaDexSettings_1.forcePort443)(this.stateManager);
         const request = App.createRequest({
-            url: `${this.MANGADEX_API}/at-home/server/${chapterId}`,
+            url: `${this.MANGADEX_API}/at-home/server/${chapterId}${forcePort ? '?forcePort443=true' : ''}`,
             method: 'GET'
         });
         const response = await this.requestManager.schedule(request, 1);
-        const json = typeof response.data === 'string' ? JSON.parse(response.data) : response.data;
+        const json = (typeof response.data === 'string') ? JSON.parse(response.data) : response.data;
         const serverUrl = json.baseUrl;
         const chapterDetails = json.chapter;
         let pages;
@@ -3773,7 +3770,7 @@ class MangaDex {
         if (response.status != 200) {
             return App.createPagedResults({ results });
         }
-        const json = typeof response.data === 'string' ? JSON.parse(response.data) : response.data;
+        const json = (typeof response.data === 'string') ? JSON.parse(response.data) : response.data;
         if (json.data === undefined) {
             throw new Error('Failed to parse json for the given search');
         }
@@ -3789,7 +3786,6 @@ class MangaDex {
         const promises = [];
         // On the homepage we only show sections enabled in source settings:
         // enabled_homepage_sections and recommended titles sections
-        const enabled_homepage_sections = await (0, MangaDexSettings_1.getEnabledHomePageSections)(this.stateManager);
         const sections = [
             {
                 request: App.createRequest({
@@ -3842,28 +3838,25 @@ class MangaDex {
             }
         ];
         for (const section of sections) {
-            // We only add the section if it is requested by the user in settings
-            if (enabled_homepage_sections.includes(section.section.id)) {
-                // Let the app load empty sections
+            // Let the app load empty sections
+            sectionCallback(section.section);
+            // Get the section data
+            promises.push(this.requestManager.schedule(section.request, 1).then(async (response) => {
+                const json = (typeof response.data === 'string') ? JSON.parse(response.data) : response.data;
+                if (json.data === undefined) {
+                    throw new Error(`Failed to parse json results for section ${section.section.title}`);
+                }
+                switch (section.section.id) {
+                    case 'latest_updates': {
+                        const coversMapping = await this.getCoversMapping(json.data.map((x) => { return x.relationships.filter((x) => x.type == 'manga').map((x) => x.id)[0]; }), ratings);
+                        section.section.items = await (0, MangaDexParser_1.parseChapterList)(json.data, coversMapping, this, MangaDexSettings_1.getHomepageThumbnail, ratings);
+                        break;
+                    }
+                    default:
+                        section.section.items = await (0, MangaDexParser_1.parseMangaList)(json.data, this, MangaDexSettings_1.getHomepageThumbnail);
+                }
                 sectionCallback(section.section);
-                // Get the section data
-                promises.push(this.requestManager.schedule(section.request, 1).then(async (response) => {
-                    const json = typeof response.data === 'string' ? JSON.parse(response.data) : response.data;
-                    if (json.data === undefined) {
-                        throw new Error(`Failed to parse json results for section ${section.section.title}`);
-                    }
-                    switch (section.section.id) {
-                        case 'latest_updates': {
-                            const coversMapping = await this.getCoversMapping(json.data.map((x) => { return x.relationships.filter((x) => x.type == 'manga').map((x) => x.id)[0]; }), ratings);
-                            section.section.items = await (0, MangaDexParser_1.parseChapterList)(json.data, coversMapping, this, MangaDexSettings_1.getHomepageThumbnail, ratings);
-                            break;
-                        }
-                        default:
-                            section.section.items = await (0, MangaDexParser_1.parseMangaList)(json.data, this, MangaDexSettings_1.getHomepageThumbnail);
-                    }
-                    sectionCallback(section.section);
-                }));
-            }
+            }));
         }
         // Make sure the function completes
         await Promise.all(promises);
@@ -3905,7 +3898,7 @@ class MangaDex {
             method: 'GET'
         });
         const response = await this.requestManager.schedule(request, 1);
-        const json = typeof response.data === 'string' ? JSON.parse(response.data) : response.data;
+        const json = (typeof response.data === 'string') ? JSON.parse(response.data) : response.data;
         if (json.data === undefined) {
             throw new Error('Failed to parse json results for getViewMoreItems');
         }
@@ -3947,242 +3940,242 @@ class MDLanguagesClass {
                 // Arabic
                 name: 'اَلْعَرَبِيَّةُ',
                 MDCode: 'ar',
-                PBCode: 'sa'
+                flagCode: '🇦🇪'
             },
             {
                 // Bulgarian
                 name: 'български',
                 MDCode: 'bg',
-                PBCode: 'bg'
+                flagCode: '🇧🇬'
             },
             {
                 // Bengali
                 name: 'বাংলা',
                 MDCode: 'bn',
-                PBCode: 'bd'
+                flagCode: '🇧🇩'
             },
             {
                 // Catalan
                 name: 'Català',
                 MDCode: 'ca',
-                PBCode: 'es'
+                flagCode: '🇪🇸'
             },
             {
                 // Czech
                 name: 'Čeština',
                 MDCode: 'cs',
-                PBCode: 'cz'
+                flagCode: '🇨🇿'
             },
             {
                 // Danish
                 name: 'Dansk',
                 MDCode: 'da',
-                PBCode: 'dk'
+                flagCode: '🇩🇰'
             },
             {
                 // German
                 name: 'Deutsch',
                 MDCode: 'de',
-                PBCode: 'de'
+                flagCode: '🇩🇪'
             },
             {
                 // English
                 name: 'English',
                 MDCode: 'en',
-                PBCode: 'gb',
+                flagCode: '🇬🇧',
                 default: true
             },
             {
                 // Spanish
                 name: 'Español',
                 MDCode: 'es',
-                PBCode: 'es'
+                flagCode: '🇪🇸'
             },
             {
                 // Spanish (Latin American)
                 name: 'Español (Latinoamérica)',
                 MDCode: 'es-la',
-                PBCode: 'es'
+                flagCode: '🇪🇸'
             },
             {
                 // Farsi
                 name: 'فارسی',
                 MDCode: 'fa',
-                PBCode: 'ir'
+                flagCode: '🇮🇷'
             },
             {
                 // Finnish
                 name: 'Suomi',
                 MDCode: 'fi',
-                PBCode: 'fi'
+                flagCode: '🇫🇮'
             },
             {
                 // French
                 name: 'Français',
                 MDCode: 'fr',
-                PBCode: 'fr'
+                flagCode: '🇫🇷'
             },
             {
                 // Hebrew
                 name: 'עִבְרִית',
                 MDCode: 'he',
-                PBCode: 'il'
+                flagCode: '🇮🇱'
             },
             {
                 // Hindi
                 name: 'हिन्दी',
                 MDCode: 'hi',
-                PBCode: 'in'
+                flagCode: '🇮🇳'
             },
             {
                 // Hungarian
                 name: 'Magyar',
                 MDCode: 'hu',
-                PBCode: 'hu'
+                flagCode: '🇭🇺'
             },
             {
                 // Indonesian
                 name: 'Indonesia',
                 MDCode: 'id',
-                PBCode: 'id'
+                flagCode: '🇮🇩'
             },
             {
                 // Italian
                 name: 'Italiano',
                 MDCode: 'it',
-                PBCode: 'it'
+                flagCode: '🇮🇹'
             },
             {
                 // Japanese
                 name: '日本語',
                 MDCode: 'ja',
-                PBCode: 'jp'
+                flagCode: '🇯🇵'
             },
             {
                 // Korean
                 name: '한국어',
                 MDCode: 'ko',
-                PBCode: 'kr'
+                flagCode: '🇰🇷'
             },
             {
                 // Lithuanian
                 name: 'Lietuvių',
                 MDCode: 'lt',
-                PBCode: 'lt'
+                flagCode: '🇱🇹'
             },
             {
                 // Mongolian
                 name: 'монгол',
                 MDCode: 'mn',
-                PBCode: 'mn'
+                flagCode: '🇲🇳'
             },
             {
                 // Malay
                 name: 'Melayu',
                 MDCode: 'ms',
-                PBCode: 'my'
+                flagCode: '🇲🇾'
             },
             {
                 // Burmese
                 name: 'မြန်မာဘာသာ',
                 MDCode: 'my',
-                PBCode: 'mm'
+                flagCode: '🇲🇲'
             },
             {
                 // Dutch
                 name: 'Nederlands',
                 MDCode: 'nl',
-                PBCode: 'nl'
+                flagCode: '🇳🇱'
             },
             {
                 // Norwegian
                 name: 'Norsk',
                 MDCode: 'no',
-                PBCode: 'no'
+                flagCode: '🇳🇴'
             },
             {
                 // Polish
                 name: 'Polski',
                 MDCode: 'pl',
-                PBCode: 'pl'
+                flagCode: '🇵🇱'
             },
             {
                 // Portuguese
                 name: 'Português',
                 MDCode: 'pt',
-                PBCode: 'pt'
+                flagCode: '🇵🇹'
             },
             {
                 // Portuguese (Brazilian)
                 name: 'Português (Brasil)',
                 MDCode: 'pt-br',
-                PBCode: 'pt'
+                flagCode: '🇧🇷'
             },
             {
                 // Romanian
                 name: 'Română',
                 MDCode: 'ro',
-                PBCode: 'ro'
+                flagCode: '🇷🇴'
             },
             {
                 // Russian
                 name: 'Pусский',
                 MDCode: 'ru',
-                PBCode: 'ru'
+                flagCode: '🇷🇺'
             },
             {
                 // Serbian
                 name: 'Cрпски',
                 MDCode: 'sr',
-                PBCode: 'rs'
+                flagCode: '🇷🇸'
             },
             {
                 // Swedish
                 name: 'Svenska',
                 MDCode: 'sv',
-                PBCode: 'se'
+                flagCode: '🇸🇪'
             },
             {
                 // Thai
                 name: 'ไทย',
                 MDCode: 'th',
-                PBCode: 'th'
+                flagCode: '🇹🇭'
             },
             {
                 // Tagalog
                 name: 'Filipino',
                 MDCode: 'tl',
-                PBCode: 'ph'
+                flagCode: '🇵🇭'
             },
             {
                 // Turkish
                 name: 'Türkçe',
                 MDCode: 'tr',
-                PBCode: 'tr'
+                flagCode: '🇹🇷'
             },
             {
                 // Ukrainian
                 name: 'Yкраї́нська',
                 MDCode: 'uk',
-                PBCode: 'ua'
+                flagCode: '🇺🇦'
             },
             {
                 // Vietnamese
                 name: 'Tiếng Việt',
                 MDCode: 'vi',
-                PBCode: 'vn'
+                flagCode: '🇻🇳'
             },
             {
                 // Chinese (Simplified)
                 name: '中文 (简化字)',
                 MDCode: 'zh',
-                PBCode: 'cn'
+                flagCode: '🇨🇳'
             },
             {
                 // Chinese (Traditional)
                 name: '中文 (繁體字)',
                 MDCode: 'zh-hk',
-                PBCode: 'hk'
+                flagCode: '🇭🇰'
             }
         ];
         // Sorts the languages based on name
@@ -4192,12 +4185,10 @@ class MDLanguagesClass {
         return this.Languages.map((Language) => Language.MDCode);
     }
     getName(MDCode) {
-        return (this.Languages.filter((Language) => Language.MDCode == MDCode)[0]?.name ??
-            'Unknown');
+        return (this.Languages.filter((Language) => Language.MDCode == MDCode)[0]?.name ?? 'Unknown');
     }
-    getPBCode(MDCode) {
-        return (this.Languages.filter((Language) => Language.MDCode == MDCode)[0]
-            ?.PBCode ?? '_unknown');
+    getFlagCode(MDCode) {
+        return (this.Languages.filter((Language) => Language.MDCode == MDCode)[0]?.flagCode ?? '_unknown');
     }
     getDefault() {
         return this.Languages.filter((Language) => Language.default).map((Language) => Language.MDCode);
@@ -4261,8 +4252,7 @@ class MDHomepageSectionsClass {
         return this.Sections.map((Sections) => Sections.enum);
     }
     getName(sectionsEnum) {
-        return (this.Sections.filter((Sections) => Sections.enum == sectionsEnum)[0]
-            ?.name ?? '');
+        return (this.Sections.filter((Sections) => Sections.enum == sectionsEnum)[0]?.name ?? '');
     }
     getDefault() {
         return this.Sections.filter((Sections) => Sections.default).map((Sections) => Sections.enum);
@@ -4411,43 +4401,40 @@ exports.parseChapterList = parseChapterList;
 (function (Buffer){(function (){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.homepageSettings = exports.resetSettings = exports.thumbnailSettings = exports.accountSettings = exports.authEndpointRequest = exports.parseAccessToken = exports.contentSettings = exports.saveAccessToken = exports.getAccessToken = exports.getEnabledHomePageSections = exports.getMangaThumbnail = exports.getSearchThumbnail = exports.getHomepageThumbnail = exports.getSkipSameChapter = exports.getDataSaver = exports.getRatings = exports.getLanguages = void 0;
+exports.resetSettings = exports.thumbnailSettings = exports.accountSettings = exports.authEndpointRequest = exports.parseAccessToken = exports.contentSettings = exports.saveAccessToken = exports.getAccessToken = exports.getMangaThumbnail = exports.getSearchThumbnail = exports.getHomepageThumbnail = exports.forcePort443 = exports.getSkipSameChapter = exports.getDataSaver = exports.getRatings = exports.getLanguages = void 0;
 const MangaDexHelper_1 = require("./MangaDexHelper");
-async function getState(stateManager, key, fallback) {
-    return (await stateManager.retrieve(key)) ?? fallback;
-}
 async function getLanguages(stateManager) {
-    return getState(stateManager, 'languages', MangaDexHelper_1.MDLanguages.getDefault());
+    return (await stateManager.retrieve('languages') ?? MangaDexHelper_1.MDLanguages.getDefault());
 }
 exports.getLanguages = getLanguages;
 async function getRatings(stateManager) {
-    return getState(stateManager, 'ratings', MangaDexHelper_1.MDRatings.getDefault());
+    return (await stateManager.retrieve('ratings') ?? MangaDexHelper_1.MDRatings.getDefault());
 }
 exports.getRatings = getRatings;
 async function getDataSaver(stateManager) {
-    return getState(stateManager, 'data_saver', false);
+    return (await stateManager.retrieve('data_saver') ?? false);
 }
 exports.getDataSaver = getDataSaver;
 async function getSkipSameChapter(stateManager) {
-    return getState(stateManager, 'skip_same_chapter', false);
+    return (await stateManager.retrieve('skip_same_chapter') ?? false);
 }
 exports.getSkipSameChapter = getSkipSameChapter;
+async function forcePort443(stateManager) {
+    return (await stateManager.retrieve('force_port_443') ?? false);
+}
+exports.forcePort443 = forcePort443;
 async function getHomepageThumbnail(stateManager) {
-    return getState(stateManager, 'homepage_thumbnail', MangaDexHelper_1.MDImageQuality.getDefault('homepage'));
+    return (await stateManager.retrieve('homepage_thumbnail') ?? [MangaDexHelper_1.MDImageQuality.getDefault('homepage')]);
 }
 exports.getHomepageThumbnail = getHomepageThumbnail;
 async function getSearchThumbnail(stateManager) {
-    return getState(stateManager, 'search_thumbnail', MangaDexHelper_1.MDImageQuality.getDefault('search'));
+    return (await stateManager.retrieve('search_thumbnail') ?? [MangaDexHelper_1.MDImageQuality.getDefault('search')]);
 }
 exports.getSearchThumbnail = getSearchThumbnail;
 async function getMangaThumbnail(stateManager) {
-    return getState(stateManager, 'manga_thumbnail', MangaDexHelper_1.MDImageQuality.getDefault('manga'));
+    return (await stateManager.retrieve('manga_thumbnail') ?? [MangaDexHelper_1.MDImageQuality.getDefault('manga')]);
 }
 exports.getMangaThumbnail = getMangaThumbnail;
-async function getEnabledHomePageSections(stateManager) {
-    return getState(stateManager, 'enabled_homepage_sections', MangaDexHelper_1.MDHomepageSections.getDefault());
-}
-exports.getEnabledHomePageSections = getEnabledHomePageSections;
 async function getAccessToken(stateManager) {
     const accessToken = await stateManager.keychain.retrieve('access_token');
     const refreshToken = await stateManager.keychain.retrieve('refresh_token');
@@ -4485,7 +4472,7 @@ function contentSettings(stateManager) {
                     id: 'content',
                     footer: 'When enabled, same chapters from different scanlation group will not be shown.',
                     rows: async () => {
-                        const values = await Promise.all([
+                        await Promise.all([
                             getLanguages(stateManager),
                             getRatings(stateManager),
                             getDataSaver(stateManager),
@@ -4496,12 +4483,10 @@ function contentSettings(stateManager) {
                                 id: 'languages',
                                 label: 'Languages',
                                 options: MangaDexHelper_1.MDLanguages.getMDCodeList(),
-                                labelResolver: async (option_1) => MangaDexHelper_1.MDLanguages.getName(option_1),
+                                labelResolver: async (option) => MangaDexHelper_1.MDLanguages.getName(option),
                                 value: App.createDUIBinding({
-                                    get: async () => values[0],
-                                    set: async (newValue) => {
-                                        await stateManager.store('languages', newValue);
-                                    }
+                                    get: async () => getLanguages(stateManager),
+                                    set: async (newValue) => { await stateManager.store('languages', newValue); }
                                 }),
                                 allowsMultiselect: true
                             }),
@@ -4509,12 +4494,10 @@ function contentSettings(stateManager) {
                                 id: 'ratings',
                                 label: 'Content Rating',
                                 options: MangaDexHelper_1.MDRatings.getEnumList(),
-                                labelResolver: async (option_3) => MangaDexHelper_1.MDRatings.getName(option_3),
+                                labelResolver: async (option) => MangaDexHelper_1.MDRatings.getName(option),
                                 value: App.createDUIBinding({
-                                    get: async () => values[1],
-                                    set: async (newValue) => {
-                                        await stateManager.store('ratings', newValue);
-                                    }
+                                    get: async () => getRatings(stateManager),
+                                    set: async (newValue) => { await stateManager.store('ratings', newValue); }
                                 }),
                                 allowsMultiselect: true
                             }),
@@ -4522,20 +4505,24 @@ function contentSettings(stateManager) {
                                 id: 'data_saver',
                                 label: 'Data Saver',
                                 value: App.createDUIBinding({
-                                    get: async () => values[2],
-                                    set: async (newValue) => {
-                                        await stateManager.store('data_saver', newValue);
-                                    }
+                                    get: async () => getDataSaver(stateManager),
+                                    set: async (newValue) => { await stateManager.store('data_saver', newValue); }
                                 })
                             }),
                             App.createDUISwitch({
                                 id: 'skip_same_chapter',
                                 label: 'Skip Same Chapter',
                                 value: App.createDUIBinding({
-                                    get: async () => values[3],
-                                    set: async (newValue) => {
-                                        await stateManager.store('skip_same_chapter', newValue);
-                                    }
+                                    get: async () => getSkipSameChapter(stateManager),
+                                    set: async (newValue) => { await stateManager.store('skip_same_chapter', newValue); }
+                                })
+                            }),
+                            App.createDUISwitch({
+                                id: 'force_port_443',
+                                label: 'Force Port 443',
+                                value: App.createDUIBinding({
+                                    get: async () => forcePort443(stateManager),
+                                    set: async (newValue) => { await stateManager.store('force_port_443', newValue); }
                                 })
                             })
                         ];
@@ -4580,7 +4567,7 @@ async function _authEndpointRequest(requestManager, endpoint, payload) {
     if (response.status > 399) {
         throw new Error('Request failed with error code:' + response.status);
     }
-    const jsonData = typeof response.data === 'string' ? JSON.parse(response.data) : response.data;
+    const jsonData = (typeof response.data === 'string') ? JSON.parse(response.data) : response.data;
     if (jsonData.result != 'ok') {
         throw new Error('Request failed with errors: ' + jsonData.errors.map((x) => `[${x.title}]: ${x.detail}`));
     }
@@ -4682,22 +4669,20 @@ function thumbnailSettings(stateManager) {
                     isHidden: false,
                     id: 'thumbnail',
                     rows: async () => {
-                        const values_1 = await Promise.all([
+                        await Promise.all([
                             getHomepageThumbnail(stateManager),
                             getSearchThumbnail(stateManager),
                             getMangaThumbnail(stateManager)
                         ]);
-                        return [
+                        return await [
                             App.createDUISelect({
                                 id: 'homepage_thumbnail',
                                 label: 'Homepage Thumbnail',
                                 options: MangaDexHelper_1.MDImageQuality.getEnumList(),
-                                labelResolver: async (option_1) => MangaDexHelper_1.MDImageQuality.getName(option_1),
+                                labelResolver: async (option) => MangaDexHelper_1.MDImageQuality.getName(option),
                                 value: App.createDUIBinding({
-                                    get: async () => [values_1[0]],
-                                    set: async (newValue) => {
-                                        await stateManager.store('homepage_thumbnail', newValue[0]);
-                                    }
+                                    get: async () => getHomepageThumbnail(stateManager),
+                                    set: async (newValue) => await stateManager.store('homepage_thumbnail', newValue)
                                 }),
                                 allowsMultiselect: false
                             }),
@@ -4705,12 +4690,10 @@ function thumbnailSettings(stateManager) {
                                 id: 'search_thumbnail',
                                 label: 'Search Thumbnail',
                                 options: MangaDexHelper_1.MDImageQuality.getEnumList(),
-                                labelResolver: async (option_3) => MangaDexHelper_1.MDImageQuality.getName(option_3),
+                                labelResolver: async (option) => MangaDexHelper_1.MDImageQuality.getName(option),
                                 value: App.createDUIBinding({
-                                    get: async () => [values_1[1]],
-                                    set: async (newValue) => {
-                                        await stateManager.store('search_thumbnail', newValue[0]);
-                                    }
+                                    get: async () => getSearchThumbnail(stateManager),
+                                    set: async (newValue) => await stateManager.store('search_thumbnail', newValue)
                                 }),
                                 allowsMultiselect: false
                             }),
@@ -4718,12 +4701,10 @@ function thumbnailSettings(stateManager) {
                                 id: 'manga_thumbnail',
                                 label: 'Manga Thumbnail',
                                 options: MangaDexHelper_1.MDImageQuality.getEnumList(),
-                                labelResolver: async (option_5) => MangaDexHelper_1.MDImageQuality.getName(option_5),
+                                labelResolver: async (option) => MangaDexHelper_1.MDImageQuality.getName(option),
                                 value: App.createDUIBinding({
-                                    get: async () => [values_1[2]],
-                                    set: async (newValue) => {
-                                        await stateManager.store('manga_thumbnail', newValue[0]);
-                                    }
+                                    get: async () => getMangaThumbnail(stateManager),
+                                    set: async (newValue) => await stateManager.store('manga_thumbnail', newValue)
                                 }),
                                 allowsMultiselect: false
                             })
@@ -4747,47 +4728,12 @@ function resetSettings(stateManager) {
                 stateManager.store('skip_same_chapter', null),
                 stateManager.store('homepage_thumbnail', null),
                 stateManager.store('search_thumbnail', null),
-                stateManager.store('manga_thumbnail', null),
-                stateManager.store('enabled_homepage_sections', null)
+                stateManager.store('manga_thumbnail', null)
             ]);
         }
     });
 }
 exports.resetSettings = resetSettings;
-function homepageSettings(stateManager) {
-    return App.createDUINavigationButton({
-        id: 'homepage_settings',
-        label: 'Homepage Settings',
-        form: App.createDUIForm({
-            sections: async () => [
-                App.createDUISection({
-                    isHidden: false,
-                    id: 'homepage_sections_section',
-                    //footer: 'Which sections should be shown on the homepage',
-                    rows: async () => {
-                        const value = await getEnabledHomePageSections(stateManager);
-                        return [
-                            App.createDUISelect({
-                                id: 'enabled_homepage_sections',
-                                label: 'Homepage sections',
-                                options: MangaDexHelper_1.MDHomepageSections.getEnumList(),
-                                allowsMultiselect: true,
-                                labelResolver: async (option_1) => MangaDexHelper_1.MDHomepageSections.getName(option_1),
-                                value: App.createDUIBinding({
-                                    get: async () => value ?? [],
-                                    set: async (newValue) => {
-                                        await stateManager.store('enabled_homepage_sections', newValue);
-                                    }
-                                })
-                            })
-                        ];
-                    }
-                })
-            ]
-        })
-    });
-}
-exports.homepageSettings = homepageSettings;
 
 }).call(this)}).call(this,require("buffer").Buffer)
 },{"./MangaDexHelper":74,"buffer":63}],77:[function(require,module,exports){
