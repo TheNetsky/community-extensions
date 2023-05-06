@@ -5,44 +5,40 @@ import {
 import {
     MDLanguages,
     MDRatings,
-    MDImageQuality,
-    MDHomepageSections
+    MDImageQuality
 } from './MangaDexHelper'
 
-async function getState<T>(stateManager: SourceStateManager, key: string, fallback: T) {
-    return ((await stateManager.retrieve(key)) as T) ?? fallback
-}
 
 export async function getLanguages(stateManager: SourceStateManager) {
-    return getState(stateManager, 'languages', MDLanguages.getDefault())
+    return (await stateManager.retrieve('languages') ?? MDLanguages.getDefault())
 }
 
 export async function getRatings(stateManager: SourceStateManager) {
-    return getState(stateManager, 'ratings', MDRatings.getDefault())
+    return (await stateManager.retrieve('ratings') ?? MDRatings.getDefault())
 }
 
 export async function getDataSaver(stateManager: SourceStateManager) {
-    return getState(stateManager, 'data_saver', false)
+    return (await stateManager.retrieve('data_saver') ?? false)
 }
 
 export async function getSkipSameChapter(stateManager: SourceStateManager) {
-    return getState(stateManager, 'skip_same_chapter', false)
+    return (await stateManager.retrieve('skip_same_chapter') ?? false)
+}
+
+export async function forcePort443(stateManager: SourceStateManager) {
+    return (await stateManager.retrieve('force_port_443') ?? false)
 }
 
 export async function getHomepageThumbnail(stateManager: SourceStateManager) {
-    return getState(stateManager, 'homepage_thumbnail', MDImageQuality.getDefault('homepage'))
+    return (await stateManager.retrieve('homepage_thumbnail') ?? [MDImageQuality.getDefault('homepage')])
 }
 
 export async function getSearchThumbnail(stateManager: SourceStateManager) {
-    return getState(stateManager, 'search_thumbnail', MDImageQuality.getDefault('search'))
+    return (await stateManager.retrieve('search_thumbnail') ?? [MDImageQuality.getDefault('search')])
 }
 
 export async function getMangaThumbnail(stateManager: SourceStateManager) {
-    return getState(stateManager, 'manga_thumbnail', MDImageQuality.getDefault('manga'))
-}
-
-export async function getEnabledHomePageSections(stateManager: SourceStateManager) {
-    return getState<string[]>(stateManager, 'enabled_homepage_sections', MDHomepageSections.getDefault())
+    return (await stateManager.retrieve('manga_thumbnail') ?? [MDImageQuality.getDefault('manga')])
 }
 
 export async function getAccessToken(stateManager: SourceStateManager) {
@@ -84,7 +80,7 @@ export function contentSettings(stateManager: SourceStateManager) {
                     id: 'content',
                     footer: 'When enabled, same chapters from different scanlation group will not be shown.',
                     rows: async () => {
-                        const values = await Promise.all([
+                        await Promise.all([
                             getLanguages(stateManager),
                             getRatings(stateManager),
                             getDataSaver(stateManager),
@@ -96,12 +92,10 @@ export function contentSettings(stateManager: SourceStateManager) {
                                 id: 'languages',
                                 label: 'Languages',
                                 options: MDLanguages.getMDCodeList(),
-                                labelResolver: async (option_1: string) => MDLanguages.getName(option_1),
+                                labelResolver: async (option) => MDLanguages.getName(option),
                                 value: App.createDUIBinding({
-                                    get: async () => values[0],
-                                    set: async (newValue) => {
-                                        await stateManager.store('languages', newValue)
-                                    }
+                                    get: async () => getLanguages(stateManager),
+                                    set: async (newValue) => { await stateManager.store('languages', newValue) }
                                 }),
                                 allowsMultiselect: true
                             }),
@@ -110,12 +104,10 @@ export function contentSettings(stateManager: SourceStateManager) {
                                 id: 'ratings',
                                 label: 'Content Rating',
                                 options: MDRatings.getEnumList(),
-                                labelResolver: async (option_3: string) => MDRatings.getName(option_3),
+                                labelResolver: async (option) => MDRatings.getName(option),
                                 value: App.createDUIBinding({
-                                    get: async () => values[1],
-                                    set: async (newValue) => {
-                                        await stateManager.store('ratings', newValue)
-                                    }
+                                    get: async () => getRatings(stateManager),
+                                    set: async (newValue) => { await stateManager.store('ratings', newValue) }
                                 }),
                                 allowsMultiselect: true
                             }),
@@ -124,10 +116,8 @@ export function contentSettings(stateManager: SourceStateManager) {
                                 id: 'data_saver',
                                 label: 'Data Saver',
                                 value: App.createDUIBinding({
-                                    get: async () => values[2],
-                                    set: async (newValue) => {
-                                        await stateManager.store('data_saver', newValue)
-                                    }
+                                    get: async () => getDataSaver(stateManager),
+                                    set: async (newValue) => { await stateManager.store('data_saver', newValue) }
                                 })
                             }),
 
@@ -135,10 +125,17 @@ export function contentSettings(stateManager: SourceStateManager) {
                                 id: 'skip_same_chapter',
                                 label: 'Skip Same Chapter',
                                 value: App.createDUIBinding({
-                                    get: async () => values[3],
-                                    set: async (newValue) => {
-                                        await stateManager.store('skip_same_chapter', newValue)
-                                    }
+                                    get: async () => getSkipSameChapter(stateManager),
+                                    set: async (newValue) => { await stateManager.store('skip_same_chapter', newValue) }
+                                })
+                            }),
+
+                            App.createDUISwitch({
+                                id: 'force_port_443',
+                                label: 'Force Port 443',
+                                value: App.createDUIBinding({
+                                    get: async () => forcePort443(stateManager),
+                                    set: async (newValue) => { await stateManager.store('force_port_443', newValue) }
                                 })
                             })
                         ]
@@ -188,7 +185,7 @@ async function _authEndpointRequest(requestManager: RequestManager, endpoint: 'l
         throw new Error('Request failed with error code:' + response.status)
     }
 
-    const jsonData = typeof response.data === 'string' ? JSON.parse(response.data) : response.data
+    const jsonData = (typeof response.data === 'string') ? JSON.parse(response.data) : response.data
     if (jsonData.result != 'ok') {
         throw new Error('Request failed with errors: ' + jsonData.errors.map((x: any) => `[${x.title}]: ${x.detail}`))
     }
@@ -297,50 +294,45 @@ export function thumbnailSettings(stateManager: SourceStateManager) {
                     isHidden: false,
                     id: 'thumbnail',
                     rows: async () => {
-                        const values_1 = await Promise.all([
+                        await Promise.all([
                             getHomepageThumbnail(stateManager),
                             getSearchThumbnail(stateManager),
                             getMangaThumbnail(stateManager)
                         ])
-                        return [
+                        return await [
                             App.createDUISelect({
                                 id: 'homepage_thumbnail',
                                 label: 'Homepage Thumbnail',
                                 options: MDImageQuality.getEnumList(),
-                                labelResolver: async (option_1) => MDImageQuality.getName(option_1),
+                                labelResolver: async (option) => MDImageQuality.getName(option),
                                 value: App.createDUIBinding({
-                                    get: async () => [values_1[0]],
-                                    set: async (newValue) => {
-                                        await stateManager.store('homepage_thumbnail', newValue[0])
-                                    }
+                                    get: async () => getHomepageThumbnail(stateManager),
+                                    set: async (newValue) => await stateManager.store('homepage_thumbnail', newValue)
+
                                 }),
                                 allowsMultiselect: false
                             }),
-
                             App.createDUISelect({
                                 id: 'search_thumbnail',
                                 label: 'Search Thumbnail',
                                 options: MDImageQuality.getEnumList(),
-                                labelResolver: async (option_3) => MDImageQuality.getName(option_3),
+                                labelResolver: async (option) => MDImageQuality.getName(option),
                                 value: App.createDUIBinding({
-                                    get: async () => [values_1[1]],
-                                    set: async (newValue) => {
-                                        await stateManager.store('search_thumbnail', newValue[0])
-                                    }
+                                    get: async () => getSearchThumbnail(stateManager),
+                                    set: async (newValue) => await stateManager.store('search_thumbnail', newValue)
+
                                 }),
                                 allowsMultiselect: false
                             }),
-
                             App.createDUISelect({
                                 id: 'manga_thumbnail',
                                 label: 'Manga Thumbnail',
                                 options: MDImageQuality.getEnumList(),
-                                labelResolver: async (option_5) => MDImageQuality.getName(option_5),
+                                labelResolver: async (option) => MDImageQuality.getName(option),
                                 value: App.createDUIBinding({
-                                    get: async () => [values_1[2]],
-                                    set: async (newValue) => {
-                                        await stateManager.store('manga_thumbnail', newValue[0])
-                                    }
+                                    get: async () => getMangaThumbnail(stateManager),
+                                    set: async (newValue) => await stateManager.store('manga_thumbnail', newValue)
+
                                 }),
                                 allowsMultiselect: false
                             })
@@ -364,44 +356,7 @@ export function resetSettings(stateManager: SourceStateManager) {
                 stateManager.store('skip_same_chapter', null),
                 stateManager.store('homepage_thumbnail', null),
                 stateManager.store('search_thumbnail', null),
-                stateManager.store('manga_thumbnail', null),
-                stateManager.store('enabled_homepage_sections', null)
-            ])
+                stateManager.store('manga_thumbnail', null)])
         }
-    })
-}
-
-export function homepageSettings(stateManager: SourceStateManager) {
-    return App.createDUINavigationButton({
-        id: 'homepage_settings',
-        label: 'Homepage Settings',
-        form: App.createDUIForm({
-            sections: async () => [
-                App.createDUISection({
-                    isHidden: false,
-                    id: 'homepage_sections_section',
-                    //footer: 'Which sections should be shown on the homepage',
-                    rows: async () => {
-                        const value = await getEnabledHomePageSections(stateManager)
-
-                        return [
-                            App.createDUISelect({
-                                id: 'enabled_homepage_sections',
-                                label: 'Homepage sections',
-                                options: MDHomepageSections.getEnumList(),
-                                allowsMultiselect: true,
-                                labelResolver: async (option_1) => MDHomepageSections.getName(option_1),
-                                value: App.createDUIBinding({
-                                    get: async () => value ?? [],
-                                    set: async (newValue) => {
-                                        await stateManager.store('enabled_homepage_sections', newValue)
-                                    }
-                                })
-                            })
-                        ]
-                    }
-                })
-            ]
-        })
     })
 }

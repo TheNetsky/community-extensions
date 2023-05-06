@@ -7,7 +7,7 @@ export interface requestMetadata {
 interface Language {
     name: string
     MDCode: string
-    PBCode: string
+    flagCode: string
     default?: boolean
 }
 
@@ -17,242 +17,242 @@ class MDLanguagesClass {
             // Arabic
             name: 'اَلْعَرَبِيَّةُ',
             MDCode: 'ar',
-            PBCode: 'sa'
+            flagCode: '🇦🇪'
         },
         {
             // Bulgarian
             name: 'български',
             MDCode: 'bg',
-            PBCode: 'bg'
+            flagCode: '🇧🇬'
         },
         {
             // Bengali
             name: 'বাংলা',
             MDCode: 'bn',
-            PBCode: 'bd'
+            flagCode: '🇧🇩'
         },
         {
             // Catalan
             name: 'Català',
             MDCode: 'ca',
-            PBCode: 'es'
+            flagCode: '🇪🇸'
         },
         {
             // Czech
             name: 'Čeština',
             MDCode: 'cs',
-            PBCode: 'cz'
+            flagCode: '🇨🇿'
         },
         {
             // Danish
             name: 'Dansk',
             MDCode: 'da',
-            PBCode: 'dk'
+            flagCode: '🇩🇰'
         },
         {
             // German
             name: 'Deutsch',
             MDCode: 'de',
-            PBCode: 'de'
+            flagCode: '🇩🇪'
         },
         {
             // English
             name: 'English',
             MDCode: 'en',
-            PBCode: 'gb',
+            flagCode: '🇬🇧',
             default: true
         },
         {
             // Spanish
             name: 'Español',
             MDCode: 'es',
-            PBCode: 'es'
+            flagCode: '🇪🇸'
         },
         {
             // Spanish (Latin American)
             name: 'Español (Latinoamérica)',
             MDCode: 'es-la',
-            PBCode: 'es'
+            flagCode: '🇪🇸'
         },
         {
             // Farsi
             name: 'فارسی',
             MDCode: 'fa',
-            PBCode: 'ir'
+            flagCode: '🇮🇷'
         },
         {
             // Finnish
             name: 'Suomi',
             MDCode: 'fi',
-            PBCode: 'fi'
+            flagCode: '🇫🇮'
         },
         {
             // French
             name: 'Français',
             MDCode: 'fr',
-            PBCode: 'fr'
+            flagCode: '🇫🇷'
         },
         {
             // Hebrew
             name: 'עִבְרִית',
             MDCode: 'he',
-            PBCode: 'il'
+            flagCode: '🇮🇱'
         },
         {
             // Hindi
             name: 'हिन्दी',
             MDCode: 'hi',
-            PBCode: 'in'
+            flagCode: '🇮🇳'
         },
         {
             // Hungarian
             name: 'Magyar',
             MDCode: 'hu',
-            PBCode: 'hu'
+            flagCode: '🇭🇺'
         },
         {
             // Indonesian
             name: 'Indonesia',
             MDCode: 'id',
-            PBCode: 'id'
+            flagCode: '🇮🇩'
         },
         {
             // Italian
             name: 'Italiano',
             MDCode: 'it',
-            PBCode: 'it'
+            flagCode: '🇮🇹'
         },
         {
             // Japanese
             name: '日本語',
             MDCode: 'ja',
-            PBCode: 'jp'
+            flagCode: '🇯🇵'
         },
         {
             // Korean
             name: '한국어',
             MDCode: 'ko',
-            PBCode: 'kr'
+            flagCode: '🇰🇷'
         },
         {
             // Lithuanian
             name: 'Lietuvių',
             MDCode: 'lt',
-            PBCode: 'lt'
+            flagCode: '🇱🇹'
         },
         {
             // Mongolian
             name: 'монгол',
             MDCode: 'mn',
-            PBCode: 'mn'
+            flagCode: '🇲🇳'
         },
         {
             // Malay
             name: 'Melayu',
             MDCode: 'ms',
-            PBCode: 'my'
+            flagCode: '🇲🇾'
         },
         {
             // Burmese
             name: 'မြန်မာဘာသာ',
             MDCode: 'my',
-            PBCode: 'mm'
+            flagCode: '🇲🇲'
         },
         {
             // Dutch
             name: 'Nederlands',
             MDCode: 'nl',
-            PBCode: 'nl'
+            flagCode: '🇳🇱'
         },
         {
             // Norwegian
             name: 'Norsk',
             MDCode: 'no',
-            PBCode: 'no'
+            flagCode: '🇳🇴'
         },
         {
             // Polish
             name: 'Polski',
             MDCode: 'pl',
-            PBCode: 'pl'
+            flagCode: '🇵🇱'
         },
         {
             // Portuguese
             name: 'Português',
             MDCode: 'pt',
-            PBCode: 'pt'
+            flagCode: '🇵🇹'
         },
         {
             // Portuguese (Brazilian)
             name: 'Português (Brasil)',
             MDCode: 'pt-br',
-            PBCode: 'pt'
+            flagCode: '🇧🇷'
         },
         {
             // Romanian
             name: 'Română',
             MDCode: 'ro',
-            PBCode: 'ro'
+            flagCode: '🇷🇴'
         },
         {
             // Russian
             name: 'Pусский',
             MDCode: 'ru',
-            PBCode: 'ru'
+            flagCode: '🇷🇺'
         },
         {
             // Serbian
             name: 'Cрпски',
             MDCode: 'sr',
-            PBCode: 'rs'
+            flagCode: '🇷🇸'
         },
         {
             // Swedish
             name: 'Svenska',
             MDCode: 'sv',
-            PBCode: 'se'
+            flagCode: '🇸🇪'
         },
         {
             // Thai
             name: 'ไทย',
             MDCode: 'th',
-            PBCode: 'th'
+            flagCode: '🇹🇭'
         },
         {
             // Tagalog
             name: 'Filipino',
             MDCode: 'tl',
-            PBCode: 'ph'
+            flagCode: '🇵🇭'
         },
         {
             // Turkish
             name: 'Türkçe',
             MDCode: 'tr',
-            PBCode: 'tr'
+            flagCode: '🇹🇷'
         },
         {
             // Ukrainian
             name: 'Yкраї́нська',
             MDCode: 'uk',
-            PBCode: 'ua'
+            flagCode: '🇺🇦'
         },
         {
             // Vietnamese
             name: 'Tiếng Việt',
             MDCode: 'vi',
-            PBCode: 'vn'
+            flagCode: '🇻🇳'
         },
         {
             // Chinese (Simplified)
             name: '中文 (简化字)',
             MDCode: 'zh',
-            PBCode: 'cn'
+            flagCode: '🇨🇳'
         },
         {
             // Chinese (Traditional)
             name: '中文 (繁體字)',
             MDCode: 'zh-hk',
-            PBCode: 'hk'
+            flagCode: '🇭🇰'
         }
     ]
 
@@ -266,32 +266,24 @@ class MDLanguagesClass {
     }
 
     getName(MDCode: string): string {
-        return (
-            this.Languages.filter((Language) => Language.MDCode == MDCode)[0]?.name ??
-            'Unknown'
-        )
+        return (this.Languages.filter((Language) => Language.MDCode == MDCode)[0]?.name ?? 'Unknown')
     }
 
-    getPBCode(MDCode: string): string {
-        return (
-            this.Languages.filter((Language) => Language.MDCode == MDCode)[0]
-                ?.PBCode ?? '_unknown'
-        )
+    getFlagCode(MDCode: string): string {
+        return (this.Languages.filter((Language) => Language.MDCode == MDCode)[0]?.flagCode ?? '_unknown')
     }
 
     getDefault(): string[] {
-        return this.Languages.filter((Language) => Language.default).map(
-            (Language) => Language.MDCode
-        )
+        return this.Languages.filter((Language) => Language.default).map((Language) => Language.MDCode)
     }
 }
 
 export const MDLanguages = new MDLanguagesClass()
 
 interface Rating {
-    name: string
-    enum: string
-    default?: true
+    name: string;
+    enum: string;
+    default?: true;
 }
 
 class MDContentRatingClass {
@@ -326,18 +318,16 @@ class MDContentRatingClass {
     }
 
     getDefault(): string[] {
-        return this.Ratings.filter((Rating) => Rating.default).map(
-            (Rating) => Rating.enum
-        )
+        return this.Ratings.filter((Rating) => Rating.default).map((Rating) => Rating.enum)
     }
 }
 
 export const MDRatings = new MDContentRatingClass()
 
 interface HomePageSection {
-    name: string
-    enum: string
-    default?: true
+    name: string;
+    enum: string;
+    default?: true;
 }
 
 class MDHomepageSectionsClass {
@@ -364,16 +354,11 @@ class MDHomepageSectionsClass {
     }
 
     getName(sectionsEnum: string): string {
-        return (
-            this.Sections.filter((Sections) => Sections.enum == sectionsEnum)[0]
-                ?.name ?? ''
-        )
+        return (this.Sections.filter((Sections) => Sections.enum == sectionsEnum)[0]?.name ?? '')
     }
 
     getDefault(): string[] {
-        return this.Sections.filter((Sections) => Sections.default).map(
-            (Sections) => Sections.enum
-        )
+        return this.Sections.filter((Sections) => Sections.default).map((Sections) => Sections.enum)
     }
 }
 
@@ -478,27 +463,15 @@ class MDImageQualityClass {
     }
 
     getName(imageQualityEnum: string): string {
-        return (
-            this.ImageQualities.filter(
-                (ImageQuality) => ImageQuality.enum == imageQualityEnum
-            )[0]?.name ?? ''
-        )
+        return (this.ImageQualities.filter((ImageQuality) => ImageQuality.enum == imageQualityEnum)[0]?.name ?? '')
     }
 
     getEnding(imageQualityEnum: string): string {
-        return (
-            this.ImageQualities.filter(
-                (ImageQuality) => ImageQuality.enum == imageQualityEnum
-            )[0]?.ending ?? ''
-        )
+        return (this.ImageQualities.filter((ImageQuality) => ImageQuality.enum == imageQualityEnum)[0]?.ending ?? '')
     }
 
     getDefault(section: string): string {
-        return (
-            this.ImageQualities.filter((ImageQuality) =>
-                ImageQuality.default?.includes(section)
-            ).map((ImageQuality) => ImageQuality.enum)[0] ?? ''
-        )
+        return (this.ImageQualities.filter((ImageQuality) => ImageQuality.default?.includes(section)).map((ImageQuality) => ImageQuality.enum)[0] ?? '')
     }
 }
 

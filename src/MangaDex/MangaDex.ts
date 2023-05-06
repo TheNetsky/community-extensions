@@ -31,12 +31,11 @@ import {
     resetSettings,
     getDataSaver,
     getSkipSameChapter,
-    homepageSettings,
-    getEnabledHomePageSections,
     accountSettings,
     getAccessToken,
     authEndpointRequest,
-    saveAccessToken
+    saveAccessToken,
+    forcePort443
 } from './MangaDexSettings'
 
 import {
@@ -125,7 +124,6 @@ export class MangaDex implements ChapterProviding, Searchable {
                 await accountSettings(this.stateManager, this.requestManager),
                 contentSettings(this.stateManager),
                 thumbnailSettings(this.stateManager),
-                homepageSettings(this.stateManager),
                 resetSettings(this.stateManager)
             ]
         })
@@ -170,7 +168,7 @@ export class MangaDex implements ChapterProviding, Searchable {
         })
 
         const response = await this.requestManager.schedule(request, 1)
-        const json = typeof response.data === 'string' ? JSON.parse(response.data) : response.data
+        const json = (typeof response.data === 'string') ? JSON.parse(response.data) : response.data
 
         return new URLBuilder(this.MANGADEX_API)
             .addPathComponent('manga')
@@ -196,7 +194,7 @@ export class MangaDex implements ChapterProviding, Searchable {
         })
 
         const response = await this.requestManager.schedule(request, 1)
-        const json = typeof response.data === 'string' ? JSON.parse(response.data) : response.data
+        const json = (typeof response.data === 'string') ? JSON.parse(response.data) : response.data
 
         for (const manga of json.data) {
             const mangaId = manga.id
@@ -222,7 +220,7 @@ export class MangaDex implements ChapterProviding, Searchable {
         })
 
         const response = await this.requestManager.schedule(request, 1)
-        const json = typeof response.data === 'string' ? JSON.parse(response.data) : response.data
+        const json = (typeof response.data === 'string') ? JSON.parse(response.data) : response.data
         const mangaDetails = json.data.attributes
 
         const titles = <string[]>([...Object.values(mangaDetails.title), ...mangaDetails.altTitles.flatMap((x: never) => Object.values(x))].map((x: string) => this.decodeHTMLEntity(x)).filter((x) => x))
@@ -301,7 +299,7 @@ export class MangaDex implements ChapterProviding, Searchable {
             })
 
             const response = await this.requestManager.schedule(request, 1)
-            const json = typeof response.data === 'string' ? JSON.parse(response.data) : response.data
+            const json = (typeof response.data === 'string') ? JSON.parse(response.data) : response.data
 
             offset += 500
 
@@ -313,12 +311,9 @@ export class MangaDex implements ChapterProviding, Searchable {
                 const name = this.decodeHTMLEntity(chapterDetails.title)
                 const chapNum = Number(chapterDetails?.chapter)
                 const volume = Number(chapterDetails?.volume)
-                const langCode: any = MDLanguages.getPBCode(chapterDetails.translatedLanguage)
+                const langCode: string = MDLanguages.getFlagCode(chapterDetails.translatedLanguage)
                 const time = new Date(chapterDetails.publishAt)
-                const group = chapter.relationships
-                    .filter((x: any) => x.type == 'scanlation_group')
-                    .map((x: any) => x.attributes.name)
-                    .join(', ')
+                const group = chapter.relationships.filter((x: any) => x.type == 'scanlation_group').map((x: any) => x.attributes.name).join(', ')
                 const pages = Number(chapterDetails.pages)
                 const identifier = `${volume}-${chapNum}-${chapterDetails.translatedLanguage}`
 
@@ -355,13 +350,15 @@ export class MangaDex implements ChapterProviding, Searchable {
         this.checkId(chapterId)
 
         const dataSaver = await getDataSaver(this.stateManager)
+        const forcePort = await forcePort443(this.stateManager)
+
         const request = App.createRequest({
-            url: `${this.MANGADEX_API}/at-home/server/${chapterId}`,
+            url: `${this.MANGADEX_API}/at-home/server/${chapterId}${forcePort ? '?forcePort443=true' : ''}`,
             method: 'GET'
         })
 
         const response = await this.requestManager.schedule(request, 1)
-        const json = typeof response.data === 'string' ? JSON.parse(response.data) : response.data
+        const json = (typeof response.data === 'string') ? JSON.parse(response.data) : response.data
         const serverUrl = json.baseUrl
         const chapterDetails = json.chapter
 
@@ -409,7 +406,7 @@ export class MangaDex implements ChapterProviding, Searchable {
             return App.createPagedResults({ results })
         }
 
-        const json = typeof response.data === 'string' ? JSON.parse(response.data) : response.data
+        const json = (typeof response.data === 'string') ? JSON.parse(response.data) : response.data
         if (json.data === undefined) {
             throw new Error('Failed to parse json for the given search')
         }
@@ -428,7 +425,6 @@ export class MangaDex implements ChapterProviding, Searchable {
 
         // On the homepage we only show sections enabled in source settings:
         // enabled_homepage_sections and recommended titles sections
-        const enabled_homepage_sections = await getEnabledHomePageSections(this.stateManager)
         const sections = [
             {
                 request: App.createRequest({
@@ -482,31 +478,29 @@ export class MangaDex implements ChapterProviding, Searchable {
         ]
 
         for (const section of sections) {
-            // We only add the section if it is requested by the user in settings
-            if (enabled_homepage_sections.includes(section.section.id)) {
-                // Let the app load empty sections
-                sectionCallback(section.section)
-                // Get the section data
-                promises.push(
-                    this.requestManager.schedule(section.request, 1).then(async (response) => {
-                        const json = typeof response.data === 'string' ? JSON.parse(response.data) : response.data
-                        if (json.data === undefined) {
-                            throw new Error(`Failed to parse json results for section ${section.section.title}`)
-                        }
+            // Let the app load empty sections
+            sectionCallback(section.section)
+            // Get the section data
+            promises.push(
+                this.requestManager.schedule(section.request, 1).then(async (response) => {
+                    const json = (typeof response.data === 'string') ? JSON.parse(response.data) : response.data
+                    if (json.data === undefined) {
+                        throw new Error(`Failed to parse json results for section ${section.section.title}`)
+                    }
 
-                        switch (section.section.id) {
-                            case 'latest_updates': {
-                                const coversMapping = await this.getCoversMapping(json.data.map((x: any) => { return x.relationships.filter((x: any) => x.type == 'manga').map((x: any) => x.id)[0] }), ratings)
-                                section.section.items = await parseChapterList(json.data, coversMapping, this, getHomepageThumbnail, ratings)
-                                break
-                            }
-                            default:
-                                section.section.items = await parseMangaList(json.data, this, getHomepageThumbnail)
+                    switch (section.section.id) {
+                        case 'latest_updates': {
+                            const coversMapping = await this.getCoversMapping(json.data.map((x: any) => { return x.relationships.filter((x: any) => x.type == 'manga').map((x: any) => x.id)[0] }), ratings)
+                            section.section.items = await parseChapterList(json.data, coversMapping, this, getHomepageThumbnail, ratings)
+                            break
                         }
-                        sectionCallback(section.section)
-                    })
-                )
-            }
+                        default:
+                            section.section.items = await parseMangaList(json.data, this, getHomepageThumbnail)
+                    }
+                    sectionCallback(section.section)
+                })
+            )
+
         }
 
         // Make sure the function completes
@@ -555,7 +549,7 @@ export class MangaDex implements ChapterProviding, Searchable {
         })
         const response = await this.requestManager.schedule(request, 1)
 
-        const json = typeof response.data === 'string' ? JSON.parse(response.data) : response.data
+        const json = (typeof response.data === 'string') ? JSON.parse(response.data) : response.data
         if (json.data === undefined) {
             throw new Error('Failed to parse json results for getViewMoreItems')
         }

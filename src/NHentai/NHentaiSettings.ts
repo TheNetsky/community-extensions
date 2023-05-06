@@ -43,7 +43,7 @@ export const settings = (stateManager: SourceStateManager): DUINavigationButton 
                                     id: 'languages',
                                     label: 'Languages',
                                     options: NHLanguages.getNHCodeList(),
-                                    labelResolver: async (option_1) => NHLanguages.getName(option_1),
+                                    labelResolver: async (option) => NHLanguages.getName(option),
                                     value: App.createDUIBinding({
                                         get: () => getLanguages(stateManager),
                                         set: async (newValue) => await stateManager.store('languages', newValue)
@@ -55,7 +55,7 @@ export const settings = (stateManager: SourceStateManager): DUINavigationButton 
                                     id: 'sort_order',
                                     label: 'Default search sort order',
                                     options: NHSortOrders.getNHCodeList(),
-                                    labelResolver: async (option_3) => NHSortOrders.getName(option_3),
+                                    labelResolver: async (option) => NHSortOrders.getName(option),
                                     value: App.createDUIBinding({
                                         get: () => getSortOrders(stateManager),
                                         set: async (newValue) => await stateManager.store('sort_order', newValue)
