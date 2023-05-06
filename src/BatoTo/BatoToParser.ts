@@ -14,10 +14,7 @@ import {
     BTLanguages
 } from './BatoToHelper'
 
-import {
-    AES,
-    enc
-} from 'crypto-js'
+const CryptoJS = require('./external/crypto-js.min.js') // 4.1.1
 
 import entities = require('entities')
 
@@ -36,7 +33,7 @@ export const parseMangaDetails = ($: CheerioStatic, mangaId: string): SourceMang
     const author = authorElement.length ? authorElement.children().map((_: number, e: CheerioElement) => {
         return $(e).text().trim()
     }).toArray().join(', ') : ''
-    
+
     const artistElement = $('div.attr-item b:contains("Artists")').next('span')
     const artist = artistElement.length ? artistElement.children().map((_: number, e: CheerioElement) => {
         return $(e).text().trim()
@@ -44,7 +41,7 @@ export const parseMangaDetails = ($: CheerioStatic, mangaId: string): SourceMang
 
     const arrayTags: Tag[] = []
     for (const tag of $('div.attr-item b:contains("Genres")').next('span').children().toArray()) {
-        const label = $(tag).text().trim()  
+        const label = $(tag).text().trim()
         const id = encodeURI(BTGenres.getParam(label) ?? label)
 
         if (!id || !label) continue
@@ -73,7 +70,7 @@ export const parseMangaDetails = ($: CheerioStatic, mangaId: string): SourceMang
         id: mangaId,
         mangaInfo: App.createMangaInfo({
             titles: titles,
-            image: `https://thumbnail_url?mangaId=${mangaId}`,
+            image: `mangaId=${mangaId}`,
             status: status,
             author: author,
             artist: artist,
@@ -138,7 +135,7 @@ export const parseChapterDetails = ($: CheerioStatic, mangaId: string, chapterId
     const batoPass = eval(script.match(/const\s+batoPass\s*=\s*(.*?);/)?.[1] ?? '').toString()
     const batoWord = (script.match(/const\s+batoWord\s*=\s*"(.*)";/)?.[1] ?? '')
     const imgList = JSON.parse(script.match(/const\s+imgHttpLis\s*=\s*(.*?);/)?.[1] ?? '')
-    const tknList = JSON.parse(AES.decrypt(batoWord, batoPass).toString(enc.Utf8))
+    const tknList = JSON.parse(CryptoJS.AES.decrypt(batoWord, batoPass).toString(CryptoJS.enc.Utf8))
 
     for (let i = 0; i < Math.min(imgList.length, tknList.length); i++) {
         pages.push(`${imgList[i]}?${tknList[i]}`)
@@ -174,7 +171,7 @@ export const parseHomeSections = ($: CheerioStatic, sectionCallback: (section: H
         const title: string = $('.item-title', manga).text().trim() ?? ''
         const id = $('a', manga).attr('href')?.replace('/series/', '')?.trim().split('/')[0] ?? ''
         const btcode = $('em', manga).attr('data-lang')
-        const lang: string = btcode ? BTLanguages.getLangCode(btcode): '🇬🇧'
+        const lang: string = btcode ? BTLanguages.getLangCode(btcode) : '🇬🇧'
         const subtitle: string = lang + ' ' + $('.item-volch', manga).text().trim() ?? lang
 
         if (!id || !title) continue
@@ -195,7 +192,7 @@ export const parseHomeSections = ($: CheerioStatic, sectionCallback: (section: H
         const title: string = $('.item-title', manga).text().trim() ?? ''
         const id = $('a', manga).attr('href')?.replace('/series/', '')?.trim().split('/')[0] ?? ''
         const btcode = $('em', manga).attr('data-lang')
-        const lang: string = btcode ? BTLanguages.getLangCode(btcode): '🇬🇧'
+        const lang: string = btcode ? BTLanguages.getLangCode(btcode) : '🇬🇧'
         const subtitle: string = lang + ' ' + $('.item-volch i', manga).text().trim() + lang ?? lang
 
         if (!id || !title) continue
@@ -218,8 +215,8 @@ export const parseViewMore = ($: CheerioStatic): PartialSourceManga[] => {
         const id = $('a', obj).attr('href')?.replace('/series/', '').trim().split('/')[0] ?? ''
         const title = $('.item-title', obj).text()
         const btcode = $('em', obj).attr('data-lang')
-        const lang: string = btcode ? BTLanguages.getLangCode(btcode): '🇬🇧'
-        const subtitle = lang + ' ' + $('.visited', obj).text().trim() 
+        const lang: string = btcode ? BTLanguages.getLangCode(btcode) : '🇬🇧'
+        const subtitle = lang + ' ' + $('.visited', obj).text().trim()
         const image = $('img', obj).attr('src') ?? ''
 
         if (!id || !title || collectedIds.includes(id)) continue
@@ -253,7 +250,7 @@ export const parseSearch = ($: CheerioStatic): PartialSourceManga[] => {
         const id = $('.item-cover', obj).attr('href')?.replace('/series/', '')?.trim().split('/')[0] ?? ''
         const title: string = $('.item-title', obj).text() ?? ''
         const btcode = $('em', obj).attr('data-lang')
-        const lang: string = btcode ? BTLanguages.getLangCode(btcode): '🇬🇧'
+        const lang: string = btcode ? BTLanguages.getLangCode(btcode) : '🇬🇧'
         const subtitle = lang + ' ' + $('.visited', obj).text().trim()
         const image = $('img', obj).attr('src') ?? ''
 

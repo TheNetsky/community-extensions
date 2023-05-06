@@ -67,8 +67,8 @@ export class BatoTo implements SearchResultsProviding, MangaProviding, ChapterPr
                         'user-agent': await this.requestManager.getDefaultUserAgent()
                     }
                 }
-                if (request.url.includes('?mangaId=')) {
-                    const mangaId = request.url.split('?mangaId=')[1]
+                if (request.url.includes('mangaId=')) {
+                    const mangaId = request.url.replace('mangaId=', '')
                     if (mangaId) request.url = await this.getThumbnailUrl(mangaId)
                 }
                 return request
@@ -171,7 +171,7 @@ export class BatoTo implements SearchResultsProviding, MangaProviding, ChapterPr
                 url: `${BATO_DOMAIN}/search?word=${encodeURI(query.title ?? '')}&page=${page}`,
                 method: 'GET'
             })
-        // Tag Search
+            // Tag Search
         } else {
             request = App.createRequest({
                 url: `${BATO_DOMAIN}/browse`,
