@@ -5,29 +5,34 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "type": "node",
+      "name": "Test Sources",
       "request": "launch",
-      "name": "Test Current Source",
-      "program": "${workspaceFolder}/node_modules/.bin/paperback",
-      "args": [
+      "runtimeArgs": [
+        "run-script",
         "test",
-        "${fileBasenameNoExtension}"
+        "${input:sourceId}"
       ],
+      "runtimeExecutable": "npm",
+      "skipFiles": [
+        "<node_internals>/**"
+      ],
+      "type": "node",
+      "presentation": {
+        "hidden": false,
+        "group": "Paperback",
+        "order": 1
+      },
       "console": "integratedTerminal",
-      "sourceMaps": true,
-      "internalConsoleOptions": "neverOpen"
-    },
+      "autoAttachChildProcesses": true,
+      "internalConsoleOptions": "openOnSessionStart",
+      "trace": true,
+    }
+  ],
+  "inputs": [
     {
-      "type": "node",
-      "request": "launch",
-      "name": "Test All Sources",
-      "program": "${workspaceFolder}/node_modules/.bin/paperback",
-      "args": [
-        "test",
-      ],
-      "console": "integratedTerminal",
-      "sourceMaps": true,
-      "internalConsoleOptions": "neverOpen"
+      "type": "promptString",
+      "id": "sourceId",
+      "description": "Source ID"
     }
   ]
 }

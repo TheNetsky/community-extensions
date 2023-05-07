@@ -16,7 +16,8 @@ import {
     ChapterProviding,
     SourceIntents,
     DUISection,
-    Searchable
+    SearchResultsProviding,
+    HomePageSectionsProviding
 } from '@paperback/types'
 
 import entities = require('entities')
@@ -46,15 +47,17 @@ import {
 } from './MangaDexHelper'
 
 import {
-    parseChapterList,
     parseMangaList
 } from './MangaDexParser'
 
 import tagJSON from './external/tag.json'
+import { MangaDexSearchResponse } from './MangaDexInterfaces'
 
 const MANGADEX_DOMAIN = 'https://mangadex.org'
 const MANGADEX_API = 'https://api.mangadex.org'
 const COVER_BASE_URL = 'https://uploads.mangadex.org/covers'
+
+const SEASONAL_LIST = '77430796-6625-4684-b673-ffae5140f337'
 
 export const MangaDexInfo: SourceInfo = {
     author: 'Nar1n & Netsky',
@@ -68,7 +71,7 @@ export const MangaDexInfo: SourceInfo = {
     intents: SourceIntents.MANGA_CHAPTERS | SourceIntents.SETTINGS_UI | SourceIntents.HOMEPAGE_SECTIONS
 }
 
-export class MangaDex implements ChapterProviding, Searchable {
+export class MangaDex implements ChapterProviding, SearchResultsProviding, HomePageSectionsProviding {
     MANGADEX_DOMAIN = MANGADEX_DOMAIN
     MANGADEX_API = MANGADEX_API
     COVER_BASE_URL = COVER_BASE_URL
@@ -161,6 +164,7 @@ export class MangaDex implements ChapterProviding, Searchable {
         return true
     }
 
+    // Used for seasonal listing
     async getCustomListRequestURL(listId: string, ratings: string[]): Promise<string> {
         const request = App.createRequest({
             url: `${this.MANGADEX_API}/list/${listId}`,
@@ -177,34 +181,6 @@ export class MangaDex implements ChapterProviding, Searchable {
             .addQueryParameter('includes', ['cover_art'])
             .addQueryParameter('ids', json.data.relationships.filter((x: any) => x.type == 'manga').map((x: Tag) => x.id))
             .buildUrl()
-    }
-
-    async getCoversMapping(mangaIds: string[], ratings: string[]): Promise<{ [id: string]: string }> {
-        const mapping: { [id: string]: string } = {}
-
-        const request = App.createRequest({
-            url: new URLBuilder(this.MANGADEX_API)
-                .addPathComponent('manga')
-                .addQueryParameter('limit', 100)
-                .addQueryParameter('contentRating', ratings)
-                .addQueryParameter('ids', mangaIds)
-                .addQueryParameter('includes', ['cover_art'])
-                .buildUrl(),
-            method: 'GET'
-        })
-
-        const response = await this.requestManager.schedule(request, 1)
-        const json = (typeof response.data === 'string') ? JSON.parse(response.data) : response.data
-
-        for (const manga of json.data) {
-            const mangaId = manga.id
-
-            const coverFileName = manga.relationships.filter((x: any) => x.type == 'cover_art').map((x: any) => x.attributes?.fileName)[0]
-            if (!mangaId || !coverFileName) continue
-            mapping[mangaId] = coverFileName
-        }
-
-        return mapping
     }
 
     async getMangaDetails(mangaId: string): Promise<SourceManga> {
@@ -234,25 +210,13 @@ export class MangaDex implements ChapterProviding, Searchable {
             tags.push(App.createTag({ id: tag.id, label: Object.keys(tagName).map((keys) => tagName[keys])[0] ?? 'Unknown' }))
         }
 
-        const author = json.data.relationships
-            .filter((x: any) => x.type == 'author')
-            .map((x: any) => x.attributes.name)
-            .join(', ')
+        const author = json.data.relationships.filter((x: any) => x.type == 'author').map((x: any) => x.attributes.name).join(', ')
+        const artist = json.data.relationships.filter((x: any) => x.type == 'artist').map((x: any) => x.attributes.name).join(', ')
 
-        const artist = json.data.relationships
-            .filter((x: any) => x.type == 'artist')
-            .map((x: any) => x.attributes.name)
-            .join(', ')
-
-        const coverFileName = json.data.relationships
-            .filter((x: any) => x.type == 'cover_art')
-            .map((x: any) => x.attributes?.fileName)[0]
-
-        let image: string
+        let image = ''
+        const coverFileName = json.data.relationships.filter((x: any) => x.type == 'cover_art').map((x: any) => x.attributes?.fileName)[0]
         if (coverFileName) {
             image = `${this.COVER_BASE_URL}/${mangaId}/${coverFileName}${MDImageQuality.getEnding(await getMangaThumbnail(this.stateManager))}`
-        } else {
-            image = 'https://mangadex.org/_nuxt/img/cover-placeholder.d12c3c5.jpg'
         }
 
         return App.createSourceManga({
@@ -280,6 +244,7 @@ export class MangaDex implements ChapterProviding, Searchable {
 
         let offset = 0
         let sortingIndex = 0
+
         let hasResults = true
         while (hasResults) {
             const request = App.createRequest({
@@ -318,6 +283,7 @@ export class MangaDex implements ChapterProviding, Searchable {
                 const identifier = `${volume}-${chapNum}-${chapterDetails.translatedLanguage}`
 
                 if (collectedChapters.has(identifier) && skipSameChapter) continue
+
                 if (pages > 0) {
                     chapters.push(
                         App.createChapter({
@@ -335,6 +301,7 @@ export class MangaDex implements ChapterProviding, Searchable {
                     sortingIndex--
                 }
             }
+
             if (json.total <= offset) {
                 hasResults = false
             }
@@ -347,7 +314,7 @@ export class MangaDex implements ChapterProviding, Searchable {
     }
 
     async getChapterDetails(mangaId: string, chapterId: string): Promise<ChapterDetails> {
-        this.checkId(chapterId)
+        this.checkId(chapterId) // Check the the mangaId is an old id
 
         const dataSaver = await getDataSaver(this.stateManager)
         const forcePort = await forcePort443(this.stateManager)
@@ -420,15 +387,13 @@ export class MangaDex implements ChapterProviding, Searchable {
 
     async getHomePageSections(sectionCallback: (section: HomeSection) => void): Promise<void> {
         const ratings: string[] = await getRatings(this.stateManager)
-        const languages: string[] = await getLanguages(this.stateManager)
+        // const languages: string[] = await getLanguages(this.stateManager)
         const promises: Promise<void>[] = []
 
-        // On the homepage we only show sections enabled in source settings:
-        // enabled_homepage_sections and recommended titles sections
         const sections = [
             {
                 request: App.createRequest({
-                    url: await this.getCustomListRequestURL('ff210dec-862b-4c17-8608-0e7f97c70488', ratings),
+                    url: await this.getCustomListRequestURL(SEASONAL_LIST, ratings),
                     method: 'GET'
                 }),
                 section: App.createHomeSection({
@@ -459,18 +424,35 @@ export class MangaDex implements ChapterProviding, Searchable {
             {
                 request: App.createRequest({
                     url: new URLBuilder(this.MANGADEX_API)
-                        .addPathComponent('chapter')
-                        .addQueryParameter('limit', 100)
-                        .addQueryParameter('order', { publishAt: 'desc' })
-                        .addQueryParameter('translatedLanguage', languages)
-                        .addQueryParameter('includes', ['manga'])
-                        .addQueryParameter('includeFutureUpdates', '0')
+                        .addPathComponent('manga')
+                        .addQueryParameter('limit', 20)
+                        .addQueryParameter('order', { latestUploadedChapter: 'desc' })
+                        .addQueryParameter('contentRating', ratings)
+                        .addQueryParameter('includes', ['cover_art'])
                         .buildUrl(),
                     method: 'GET'
                 }),
                 section: App.createHomeSection({
                     id: 'latest_updates',
                     title: 'Latest Updates',
+                    containsMoreItems: true,
+                    type: HomeSectionType.singleRowNormal
+                })
+            },
+            {
+                request: App.createRequest({
+                    url: new URLBuilder(this.MANGADEX_API)
+                        .addPathComponent('manga')
+                        .addQueryParameter('limit', 20)
+                        .addQueryParameter('order', { createdAt: 'desc' })
+                        .addQueryParameter('contentRating', ratings)
+                        .addQueryParameter('includes', ['cover_art'])
+                        .buildUrl(),
+                    method: 'GET'
+                }),
+                section: App.createHomeSection({
+                    id: 'recently_Added',
+                    title: 'Recently Added',
                     containsMoreItems: true,
                     type: HomeSectionType.singleRowNormal
                 })
@@ -483,24 +465,17 @@ export class MangaDex implements ChapterProviding, Searchable {
             // Get the section data
             promises.push(
                 this.requestManager.schedule(section.request, 1).then(async (response) => {
-                    const json = (typeof response.data === 'string') ? JSON.parse(response.data) : response.data
+                    const json: MangaDexSearchResponse = (typeof response.data === 'string') ? JSON.parse(response.data) : response.data
+
                     if (json.data === undefined) {
                         throw new Error(`Failed to parse json results for section ${section.section.title}`)
                     }
 
-                    switch (section.section.id) {
-                        case 'latest_updates': {
-                            const coversMapping = await this.getCoversMapping(json.data.map((x: any) => { return x.relationships.filter((x: any) => x.type == 'manga').map((x: any) => x.id)[0] }), ratings)
-                            section.section.items = await parseChapterList(json.data, coversMapping, this, getHomepageThumbnail, ratings)
-                            break
-                        }
-                        default:
-                            section.section.items = await parseMangaList(json.data, this, getHomepageThumbnail)
-                    }
+                    section.section.items = await parseMangaList(json.data, this, getHomepageThumbnail)
+
                     sectionCallback(section.section)
                 })
             )
-
         }
 
         // Make sure the function completes
@@ -511,7 +486,7 @@ export class MangaDex implements ChapterProviding, Searchable {
         const offset: number = metadata?.offset ?? 0
         const collectedIds: string[] = metadata?.collectedIds ?? []
         const ratings: string[] = await getRatings(this.stateManager)
-        const languages: string[] = await getLanguages(this.stateManager)
+        // const languages: string[] = await getLanguages(this.stateManager)
 
         let results: PartialSourceManga[] = []
         let url = ''
@@ -531,44 +506,50 @@ export class MangaDex implements ChapterProviding, Searchable {
 
             case 'latest_updates': {
                 url = new URLBuilder(this.MANGADEX_API)
-                    .addPathComponent('chapter')
+                    .addPathComponent('manga')
                     .addQueryParameter('limit', 100)
+                    .addQueryParameter('order', { latestUploadedChapter: 'desc' })
                     .addQueryParameter('offset', offset)
-                    .addQueryParameter('order', { publishAt: 'desc' })
-                    .addQueryParameter('translatedLanguage', languages)
-                    .addQueryParameter('includes', ['manga'])
-                    .addQueryParameter('includeFutureUpdates', '0')
+                    .addQueryParameter('contentRating', ratings)
+                    .addQueryParameter('includes', ['cover_art'])
+                    .buildUrl()
+                break
+            }
+
+            case 'recently_Added': {
+                url = new URLBuilder(this.MANGADEX_API)
+                    .addPathComponent('manga')
+                    .addQueryParameter('limit', 100)
+                    .addQueryParameter('order', { createdAt: 'desc' })
+                    .addQueryParameter('offset', offset)
+                    .addQueryParameter('contentRating', ratings)
+                    .addQueryParameter('includes', ['cover_art'])
                     .buildUrl()
                 break
             }
         }
 
         const request = App.createRequest({
-            url,
+            url: url,
             method: 'GET'
         })
         const response = await this.requestManager.schedule(request, 1)
 
-        const json = (typeof response.data === 'string') ? JSON.parse(response.data) : response.data
+        const json: MangaDexSearchResponse = (typeof response.data === 'string') ? JSON.parse(response.data) : response.data
+
         if (json.data === undefined) {
             throw new Error('Failed to parse json results for getViewMoreItems')
         }
 
-        switch (homepageSectionId) {
-            case 'latest_updates': {
-                const coversMapping = await this.getCoversMapping(json.data.map((x: any) => x.relationships.filter((x: any) => x.type == 'manga').map((x: any) => x.id)[0]), ratings)
-                results = await parseChapterList(json.data, coversMapping, this, getHomepageThumbnail, ratings)
-                break
-            }
-            default:
-                results = await parseMangaList(json.data, this, getHomepageThumbnail)
-        }
+        results = await parseMangaList(json.data, this, getHomepageThumbnail)
+
         return App.createPagedResults({
             results,
             metadata: { offset: offset + 100, collectedIds }
         })
     }
 
+    // Utility
     decodeHTMLEntity(str: string | undefined): string | undefined {
         if (str == undefined) return undefined
         return entities.decodeHTML(str)
