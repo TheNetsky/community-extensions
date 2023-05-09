@@ -3715,6 +3715,7 @@ class MangaDex {
     }
     async getSearchResults(query, metadata) {
         const ratings = await (0, MangaDexSettings_1.getRatings)(this.stateManager);
+        const languages = await (0, MangaDexSettings_1.getLanguages)(this.stateManager);
         const offset = metadata?.offset ?? 0;
         let results = [];
         const searchType = query.title?.match(/[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}/i) ? 'ids[]' : 'title';
@@ -3722,6 +3723,8 @@ class MangaDex {
             .addPathComponent('manga')
             .addQueryParameter(searchType, (query.title?.length ?? 0) > 0 ? encodeURIComponent(query.title) : undefined)
             .addQueryParameter('limit', 100)
+            .addQueryParameter('hasAvailableChapters', true)
+            .addQueryParameter('availableTranslatedLanguage', languages)
             .addQueryParameter('offset', offset)
             .addQueryParameter('contentRating', ratings)
             .addQueryParameter('includes', ['cover_art'])
@@ -3750,7 +3753,7 @@ class MangaDex {
     }
     async getHomePageSections(sectionCallback) {
         const ratings = await (0, MangaDexSettings_1.getRatings)(this.stateManager);
-        // const languages: string[] = await getLanguages(this.stateManager)
+        const languages = await (0, MangaDexSettings_1.getLanguages)(this.stateManager);
         const promises = [];
         const sections = [
             {
@@ -3770,6 +3773,8 @@ class MangaDex {
                     url: new MangaDexHelper_1.URLBuilder(this.MANGADEX_API)
                         .addPathComponent('manga')
                         .addQueryParameter('limit', 20)
+                        .addQueryParameter('hasAvailableChapters', true)
+                        .addQueryParameter('availableTranslatedLanguage', languages)
                         .addQueryParameter('order', { followedCount: 'desc' })
                         .addQueryParameter('contentRating', ratings)
                         .addQueryParameter('includes', ['cover_art'])
@@ -3788,6 +3793,8 @@ class MangaDex {
                     url: new MangaDexHelper_1.URLBuilder(this.MANGADEX_API)
                         .addPathComponent('manga')
                         .addQueryParameter('limit', 20)
+                        .addQueryParameter('hasAvailableChapters', true)
+                        .addQueryParameter('availableTranslatedLanguage', languages)
                         .addQueryParameter('order', { latestUploadedChapter: 'desc' })
                         .addQueryParameter('contentRating', ratings)
                         .addQueryParameter('includes', ['cover_art'])
@@ -3806,6 +3813,8 @@ class MangaDex {
                     url: new MangaDexHelper_1.URLBuilder(this.MANGADEX_API)
                         .addPathComponent('manga')
                         .addQueryParameter('limit', 20)
+                        .addQueryParameter('hasAvailableChapters', true)
+                        .addQueryParameter('availableTranslatedLanguage', languages)
                         .addQueryParameter('order', { createdAt: 'desc' })
                         .addQueryParameter('contentRating', ratings)
                         .addQueryParameter('includes', ['cover_art'])
@@ -3840,7 +3849,7 @@ class MangaDex {
         const offset = metadata?.offset ?? 0;
         const collectedIds = metadata?.collectedIds ?? [];
         const ratings = await (0, MangaDexSettings_1.getRatings)(this.stateManager);
-        // const languages: string[] = await getLanguages(this.stateManager)
+        const languages = await (0, MangaDexSettings_1.getLanguages)(this.stateManager);
         let results = [];
         let url = '';
         switch (homepageSectionId) {
@@ -3848,6 +3857,8 @@ class MangaDex {
                 url = new MangaDexHelper_1.URLBuilder(this.MANGADEX_API)
                     .addPathComponent('manga')
                     .addQueryParameter('limit', 100)
+                    .addQueryParameter('hasAvailableChapters', true)
+                    .addQueryParameter('availableTranslatedLanguage', languages)
                     .addQueryParameter('order', { followedCount: 'desc' })
                     .addQueryParameter('offset', offset)
                     .addQueryParameter('contentRating', ratings)
@@ -3859,6 +3870,8 @@ class MangaDex {
                 url = new MangaDexHelper_1.URLBuilder(this.MANGADEX_API)
                     .addPathComponent('manga')
                     .addQueryParameter('limit', 100)
+                    .addQueryParameter('hasAvailableChapters', true)
+                    .addQueryParameter('availableTranslatedLanguage', languages)
                     .addQueryParameter('order', { latestUploadedChapter: 'desc' })
                     .addQueryParameter('offset', offset)
                     .addQueryParameter('contentRating', ratings)
@@ -3870,6 +3883,8 @@ class MangaDex {
                 url = new MangaDexHelper_1.URLBuilder(this.MANGADEX_API)
                     .addPathComponent('manga')
                     .addQueryParameter('limit', 100)
+                    .addQueryParameter('hasAvailableChapters', true)
+                    .addQueryParameter('availableTranslatedLanguage', languages)
                     .addQueryParameter('order', { createdAt: 'desc' })
                     .addQueryParameter('offset', offset)
                     .addQueryParameter('contentRating', ratings)
