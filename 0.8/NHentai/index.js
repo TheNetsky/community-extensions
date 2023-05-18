@@ -693,7 +693,7 @@ class NHentai {
     }
     CloudFlareError(status) {
         if (status == 503 || status == 403) {
-            throw new Error(`CLOUDFLARE BYPASS ERROR:\nPlease go to Settings > Sources > ${exports.NHentaiInfo.name}> and press Cloudflare Bypass`);
+            throw new Error(`CLOUDFLARE BYPASS ERROR:\nPlease go to the homepage of <${NHentai.name}> and press the cloud icon.`);
         }
     }
     async getCloudflareBypassRequestAsync() {
