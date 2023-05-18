@@ -87,6 +87,7 @@ export const parseChapterList = ($: CheerioStatic): Chapter[] => {
     for (const chapter of $('div.episode-list div.main .item').toArray()) {
         const title = $('b', chapter).text().trim()
         const chapterId: string = $('a', chapter).attr('href')?.replace(/\/$/, '')?.split('/').pop() ?? ''
+        const group: string = $('a.ps-3 > span', chapter).text().trim()
         if (!chapterId) continue
 
         let language = BTLanguages.getLangCode($('em').attr('data-lang') ?? '')
@@ -112,7 +113,7 @@ export const parseChapterList = ($: CheerioStatic): Chapter[] => {
             time: date,
             sortingIndex,
             volume: 0,
-            group: ''
+            group: group
         })
         sortingIndex--
     }
@@ -193,7 +194,7 @@ export const parseHomeSections = ($: CheerioStatic, sectionCallback: (section: H
         const id = $('a', manga).attr('href')?.replace('/series/', '')?.trim().split('/')[0] ?? ''
         const btcode = $('em', manga).attr('data-lang')
         const lang: string = btcode ? BTLanguages.getLangCode(btcode) : '🇬🇧'
-        const subtitle: string = lang + ' ' + $('.item-volch i', manga).text().trim() + lang ?? lang
+        const subtitle: string = lang + ' ' + $('.item-volch i', manga).text().trim() ?? lang
 
         if (!id || !title) continue
         latestSection_Array.push(App.createPartialSourceManga({

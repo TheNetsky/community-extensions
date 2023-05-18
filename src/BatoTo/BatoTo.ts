@@ -34,7 +34,7 @@ import {
 const BATO_DOMAIN = 'https://bato.to'
 
 export const BatoToInfo: SourceInfo = {
-    version: '3.0.0',
+    version: '3.0.1',
     name: 'BatoTo',
     icon: 'icon.png',
     author: 'Nicholas',
