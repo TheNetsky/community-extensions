@@ -27820,7 +27820,7 @@ const types_1 = require("@paperback/types");
 const BatoToParser_1 = require("./BatoToParser");
 const BATO_DOMAIN = 'https://bato.to';
 exports.BatoToInfo = {
-    version: '3.0.0',
+    version: '3.0.1',
     name: 'BatoTo',
     icon: 'icon.png',
     author: 'Nicholas',
@@ -28755,6 +28755,7 @@ const parseChapterList = ($) => {
     for (const chapter of $('div.episode-list div.main .item').toArray()) {
         const title = $('b', chapter).text().trim();
         const chapterId = $('a', chapter).attr('href')?.replace(/\/$/, '')?.split('/').pop() ?? '';
+        const group = $('a.ps-3 > span', chapter).text().trim();
         if (!chapterId)
             continue;
         let language = BatoToHelper_1.BTLanguages.getLangCode($('em').attr('data-lang') ?? '');
@@ -28782,7 +28783,7 @@ const parseChapterList = ($) => {
             time: date,
             sortingIndex,
             volume: 0,
-            group: ''
+            group: group
         });
         sortingIndex--;
     }
@@ -28856,7 +28857,7 @@ const parseHomeSections = ($, sectionCallback) => {
         const id = $('a', manga).attr('href')?.replace('/series/', '')?.trim().split('/')[0] ?? '';
         const btcode = $('em', manga).attr('data-lang');
         const lang = btcode ? BatoToHelper_1.BTLanguages.getLangCode(btcode) : '🇬🇧';
-        const subtitle = lang + ' ' + $('.item-volch i', manga).text().trim() + lang ?? lang;
+        const subtitle = lang + ' ' + $('.item-volch i', manga).text().trim() ?? lang;
         if (!id || !title)
             continue;
         latestSection_Array.push(App.createPartialSourceManga({
