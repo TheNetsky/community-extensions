@@ -468,7 +468,7 @@ const NHentaiSettings_1 = require("./NHentaiSettings");
 const tags_json_1 = require("./tags.json");
 const NHENTAI_URL = 'https://nhentai.net';
 exports.NHentaiInfo = {
-    version: '4.0.2',
+    version: '4.0.3',
     name: 'nhentai',
     icon: 'icon.png',
     author: 'NotMarek & Netsky',
