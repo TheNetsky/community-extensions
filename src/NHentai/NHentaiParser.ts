@@ -64,6 +64,10 @@ export const parseSearch = (data: QueryResponse): PartialSourceManga[] => {
     const tiles: PartialSourceManga[] = []
     const collectedIds: string[] = []
 
+    if (!data?.result) {
+        throw new Error('JSON PARSE ERROR!\n\nYou\'ve like set too many additional arguments in this source\'s settings, remove some to see results!\nSo search with tags you need to use arguments like shown in the sourc\'s settings!')
+    }
+
     for (const gallery of data.result) {
 
         if (collectedIds.includes(gallery.id.toString())) continue

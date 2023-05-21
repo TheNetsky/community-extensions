@@ -43,7 +43,7 @@ import { popularTags } from './tags.json'
 const NHENTAI_URL = 'https://nhentai.net'
 
 export const NHentaiInfo: SourceInfo = {
-    version: '4.0.3',
+    version: '4.0.4',
     name: 'nhentai',
     icon: 'icon.png',
     author: 'NotMarek & Netsky',

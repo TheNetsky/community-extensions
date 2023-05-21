@@ -31,7 +31,7 @@ export const settings = (stateManager: SourceStateManager): DUINavigationButton 
                 return Promise.resolve([
                     App.createDUISection({
                         id: 'content',
-                        footer: 'Tags with a space in it, need to be replace with a "-"\nExample: "-big breasts" will be "-big-breasts"',
+                        footer: 'Tags with a space in it, need to be replace with a "-"\nExample: "-big breasts" will be "-big-breasts"\nTo exclude tags add the "-" in front, to include add the "+".',
                         rows: async () => {
                             await Promise.all([
                                 getLanguages(stateManager),
