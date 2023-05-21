@@ -468,7 +468,7 @@ const NHentaiSettings_1 = require("./NHentaiSettings");
 const tags_json_1 = require("./tags.json");
 const NHENTAI_URL = 'https://nhentai.net';
 exports.NHentaiInfo = {
-    version: '4.0.3',
+    version: '4.0.4',
     name: 'nhentai',
     icon: 'icon.png',
     author: 'NotMarek & Netsky',
@@ -895,6 +895,9 @@ exports.parseChapterDetails = parseChapterDetails;
 const parseSearch = (data) => {
     const tiles = [];
     const collectedIds = [];
+    if (!data?.result) {
+        throw new Error('JSON PARSE ERROR!\n\nYou\'ve like set too many additional arguments in this source\'s settings, remove some to see results!\nSo search with tags you need to use arguments like shown in the sourc\'s settings!');
+    }
     for (const gallery of data.result) {
         if (collectedIds.includes(gallery.id.toString()))
             continue;
@@ -964,7 +967,7 @@ const settings = (stateManager) => {
                 return Promise.resolve([
                     App.createDUISection({
                         id: 'content',
-                        footer: 'Tags with a space in it, need to be replace with a "-"\nExample: "-big breasts" will be "-big-breasts"',
+                        footer: 'Tags with a space in it, need to be replace with a "-"\nExample: "-big breasts" will be "-big-breasts"\nTo exclude tags add the "-" in front, to include add the "+".',
                         rows: async () => {
                             await Promise.all([
                                 (0, exports.getLanguages)(stateManager),
