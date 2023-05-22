@@ -80,7 +80,7 @@ export const parseMangaDetails = ($: CheerioStatic, mangaId: string): SourceMang
     })
 }
 
-export const parseChapterList = ($: CheerioStatic): Chapter[] => {
+export const parseChapterList = ($: CheerioStatic, mangaId: string): Chapter[] => {
     const chapters: Chapter[] = []
     let sortingIndex = 0
 
@@ -116,6 +116,10 @@ export const parseChapterList = ($: CheerioStatic): Chapter[] => {
             group: group
         })
         sortingIndex--
+    }
+
+    if (chapters.length == 0) {
+        throw new Error(`Couldn't find any chapters for mangaId: ${mangaId}!`)
     }
 
     return chapters.map(chapter => {

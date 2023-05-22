@@ -34,7 +34,7 @@ import {
 const BATO_DOMAIN = 'https://bato.to'
 
 export const BatoToInfo: SourceInfo = {
-    version: '3.0.1',
+    version: '3.0.2',
     name: 'BatoTo',
     icon: 'icon.png',
     author: 'Nicholas',
@@ -102,7 +102,7 @@ export class BatoTo implements SearchResultsProviding, MangaProviding, ChapterPr
         const response = await this.requestManager.schedule(request, 1)
         this.CloudFlareError(response.status)
         const $ = this.cheerio.load(response.data as string)
-        return parseChapterList($)
+        return parseChapterList($, mangaId)
     }
 
     async getChapterDetails(mangaId: string, chapterId: string): Promise<ChapterDetails> {
