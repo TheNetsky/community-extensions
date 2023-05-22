@@ -3474,7 +3474,7 @@ exports.MangaDexInfo = {
     description: 'Extension that pulls manga from MangaDex',
     icon: 'icon.png',
     name: 'MangaDex',
-    version: '3.0.0',
+    version: '3.0.1',
     authorWebsite: 'https://github.com/nar1n',
     websiteBaseURL: MANGADEX_DOMAIN,
     contentRating: types_1.ContentRating.EVERYONE,
@@ -3682,6 +3682,9 @@ class MangaDex {
             if (json.total <= offset) {
                 hasResults = false;
             }
+        }
+        if (chapters.length == 0) {
+            throw new Error(`Couldn't find any chapters in your selected language for mangaId: ${mangaId}!`);
         }
         return chapters.map(chapter => {
             chapter.sortingIndex += chapters.length;

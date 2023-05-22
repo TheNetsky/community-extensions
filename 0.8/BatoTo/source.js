@@ -27820,7 +27820,7 @@ const types_1 = require("@paperback/types");
 const BatoToParser_1 = require("./BatoToParser");
 const BATO_DOMAIN = 'https://bato.to';
 exports.BatoToInfo = {
-    version: '3.0.1',
+    version: '3.0.2',
     name: 'BatoTo',
     icon: 'icon.png',
     author: 'Nicholas',
@@ -27883,7 +27883,7 @@ class BatoTo {
         const response = await this.requestManager.schedule(request, 1);
         this.CloudFlareError(response.status);
         const $ = this.cheerio.load(response.data);
-        return (0, BatoToParser_1.parseChapterList)($);
+        return (0, BatoToParser_1.parseChapterList)($, mangaId);
     }
     async getChapterDetails(mangaId, chapterId) {
         const request = App.createRequest({
@@ -28749,7 +28749,7 @@ const parseMangaDetails = ($, mangaId) => {
     });
 };
 exports.parseMangaDetails = parseMangaDetails;
-const parseChapterList = ($) => {
+const parseChapterList = ($, mangaId) => {
     const chapters = [];
     let sortingIndex = 0;
     for (const chapter of $('div.episode-list div.main .item').toArray()) {
@@ -28786,6 +28786,9 @@ const parseChapterList = ($) => {
             group: group
         });
         sortingIndex--;
+    }
+    if (chapters.length == 0) {
+        throw new Error(`Couldn't find any chapters for mangaId: ${mangaId}!`);
     }
     return chapters.map(chapter => {
         chapter.sortingIndex += chapters.length;
