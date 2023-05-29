@@ -42,12 +42,7 @@ export const BatoToInfo: SourceInfo = {
     description: 'Extension that pulls manga from bato.to',
     contentRating: ContentRating.MATURE,
     websiteBaseURL: BATO_DOMAIN,
-    sourceTags: [
-        {
-            text: 'Notifications',
-            type: BadgeColor.GREEN
-        }
-    ],
+    sourceTags: [],
     intents: SourceIntents.MANGA_CHAPTERS | SourceIntents.HOMEPAGE_SECTIONS | SourceIntents.CLOUDFLARE_BYPASS_REQUIRED
 }
 

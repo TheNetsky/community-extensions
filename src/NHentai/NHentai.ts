@@ -56,10 +56,6 @@ export const NHentaiInfo: SourceInfo = {
         {
             text: '18+',
             type: BadgeColor.YELLOW
-        },
-        {
-            text: 'Cloudflare',
-            type: BadgeColor.RED
         }
     ]
 }
