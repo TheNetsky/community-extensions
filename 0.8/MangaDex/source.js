@@ -3478,6 +3478,7 @@ exports.MangaDexInfo = {
     authorWebsite: 'https://github.com/nar1n',
     websiteBaseURL: MANGADEX_DOMAIN,
     contentRating: types_1.ContentRating.EVERYONE,
+    sourceTags: [],
     intents: types_1.SourceIntents.MANGA_CHAPTERS | types_1.SourceIntents.SETTINGS_UI | types_1.SourceIntents.HOMEPAGE_SECTIONS
 };
 class MangaDex {

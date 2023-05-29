@@ -481,10 +481,6 @@ exports.NHentaiInfo = {
         {
             text: '18+',
             type: types_1.BadgeColor.YELLOW
-        },
-        {
-            text: 'Cloudflare',
-            type: types_1.BadgeColor.RED
         }
     ]
 };
