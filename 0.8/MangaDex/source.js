@@ -3474,7 +3474,7 @@ exports.MangaDexInfo = {
     description: 'Extension that pulls manga from MangaDex',
     icon: 'icon.png',
     name: 'MangaDex',
-    version: '3.0.1',
+    version: '3.0.2',
     authorWebsite: 'https://github.com/nar1n',
     websiteBaseURL: MANGADEX_DOMAIN,
     contentRating: types_1.ContentRating.EVERYONE,
@@ -3488,7 +3488,7 @@ class MangaDex {
         this.COVER_BASE_URL = COVER_BASE_URL;
         this.stateManager = App.createSourceStateManager();
         this.requestManager = App.createRequestManager({
-            requestsPerSecond: 2.5,
+            requestsPerSecond: 5,
             requestTimeout: 20000,
             interceptor: {
                 interceptRequest: async (request) => {
