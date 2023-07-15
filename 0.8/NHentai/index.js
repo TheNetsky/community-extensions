@@ -468,7 +468,7 @@ const NHentaiSettings_1 = require("./NHentaiSettings");
 const tags_json_1 = require("./tags.json");
 const NHENTAI_URL = 'https://nhentai.net';
 exports.NHentaiInfo = {
-    version: '4.0.4',
+    version: '4.0.5',
     name: 'nhentai',
     icon: 'icon.png',
     author: 'NotMarek & Netsky',
@@ -614,7 +614,7 @@ class NHentai {
                     method: 'GET'
                 }),
                 sectionID: App.createHomeSection({
-                    id: 'new',
+                    id: 'date',
                     title: 'New Uploads',
                     containsMoreItems: true,
                     type: types_1.HomeSectionType.singleRowNormal
@@ -626,7 +626,7 @@ class NHentai {
                     method: 'GET'
                 }),
                 sectionID: App.createHomeSection({
-                    id: 'popularToday',
+                    id: 'popular-today',
                     title: 'Popular Today',
                     containsMoreItems: true,
                     type: types_1.HomeSectionType.singleRowNormal
@@ -638,7 +638,7 @@ class NHentai {
                     method: 'GET'
                 }),
                 sectionID: App.createHomeSection({
-                    id: 'popularWeekly',
+                    id: 'popular-week',
                     title: 'Popular Weekly',
                     containsMoreItems: true,
                     type: types_1.HomeSectionType.singleRowNormal
@@ -650,7 +650,7 @@ class NHentai {
                     method: 'GET'
                 }),
                 sectionID: App.createHomeSection({
-                    id: 'popularAlltime',
+                    id: 'popular',
                     title: 'Popular All-Time',
                     containsMoreItems: true,
                     type: types_1.HomeSectionType.singleRowNormal
@@ -708,7 +708,7 @@ class NHentai {
             return (typeof response.data == 'string') ? JSON.parse(response.data) : response.data;
         }
         catch (error) {
-            console.log(error);
+            console.log(JSON.stringify(error));
             throw new Error('JSON PARSE ERROR!\n\nYou\'ve like set too many filters in this source\'s settings, remove some to see results!');
         }
     }
@@ -892,7 +892,8 @@ const parseSearch = (data) => {
     const tiles = [];
     const collectedIds = [];
     if (!data?.result) {
-        throw new Error('JSON PARSE ERROR!\n\nYou\'ve like set too many additional arguments in this source\'s settings, remove some to see results!\nSo search with tags you need to use arguments like shown in the sourc\'s settings!');
+        console.log(JSON.stringify(data));
+        throw new Error('JSON NO RESULT ERROR!\n\nYou\'ve like set too many additional arguments in this source\'s settings, remove some to see results!\nSo search with tags you need to use arguments like shown in the sourc\'s settings!');
     }
     for (const gallery of data.result) {
         if (collectedIds.includes(gallery.id.toString()))
