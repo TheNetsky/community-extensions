@@ -43,7 +43,7 @@ import { popularTags } from './tags.json'
 const NHENTAI_URL = 'https://nhentai.net'
 
 export const NHentaiInfo: SourceInfo = {
-    version: '4.0.4',
+    version: '4.0.5',
     name: 'nhentai',
     icon: 'icon.png',
     author: 'NotMarek & Netsky',
@@ -207,7 +207,7 @@ export class NHentai implements SearchResultsProviding, MangaProviding, ChapterP
                     method: 'GET'
                 }),
                 sectionID: App.createHomeSection({
-                    id: 'new',
+                    id: 'date',
                     title: 'New Uploads',
                     containsMoreItems: true,
                     type: HomeSectionType.singleRowNormal
@@ -219,7 +219,7 @@ export class NHentai implements SearchResultsProviding, MangaProviding, ChapterP
                     method: 'GET'
                 }),
                 sectionID: App.createHomeSection({
-                    id: 'popularToday',
+                    id: 'popular-today',
                     title: 'Popular Today',
                     containsMoreItems: true,
                     type: HomeSectionType.singleRowNormal
@@ -231,7 +231,7 @@ export class NHentai implements SearchResultsProviding, MangaProviding, ChapterP
                     method: 'GET'
                 }),
                 sectionID: App.createHomeSection({
-                    id: 'popularWeekly',
+                    id: 'popular-week',
                     title: 'Popular Weekly',
                     containsMoreItems: true,
                     type: HomeSectionType.singleRowNormal
@@ -243,7 +243,7 @@ export class NHentai implements SearchResultsProviding, MangaProviding, ChapterP
                     method: 'GET'
                 }),
                 sectionID: App.createHomeSection({
-                    id: 'popularAlltime',
+                    id: 'popular',
                     title: 'Popular All-Time',
                     containsMoreItems: true,
                     type: HomeSectionType.singleRowNormal
@@ -312,7 +312,7 @@ export class NHentai implements SearchResultsProviding, MangaProviding, ChapterP
         try {
             return (typeof response.data == 'string') ? JSON.parse(response.data) : response.data
         } catch (error) {
-            console.log(error)
+            console.log(JSON.stringify(error))
             throw new Error('JSON PARSE ERROR!\n\nYou\'ve like set too many filters in this source\'s settings, remove some to see results!')
         }
     }

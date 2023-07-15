@@ -65,7 +65,8 @@ export const parseSearch = (data: QueryResponse): PartialSourceManga[] => {
     const collectedIds: string[] = []
 
     if (!data?.result) {
-        throw new Error('JSON PARSE ERROR!\n\nYou\'ve like set too many additional arguments in this source\'s settings, remove some to see results!\nSo search with tags you need to use arguments like shown in the sourc\'s settings!')
+        console.log(JSON.stringify(data))
+        throw new Error('JSON NO RESULT ERROR!\n\nYou\'ve like set too many additional arguments in this source\'s settings, remove some to see results!\nSo search with tags you need to use arguments like shown in the sourc\'s settings!')
     }
 
     for (const gallery of data.result) {
