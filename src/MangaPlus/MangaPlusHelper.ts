@@ -1,4 +1,4 @@
-import { SourceManga } from "@paperback/types";
+import { SourceManga } from '@paperback/types'
 
 
 export interface MangaPlusResponse {
@@ -7,44 +7,54 @@ export interface MangaPlusResponse {
 }
 
 interface SuccessResult {
-    isFeaturedUpdated?: boolean
-    titleRankingView?: TitleRankingView
-    titleDetailView?: TitleDetailView
-    mangaViewer?: MangaViewer
-    allTitlesViewV2?: AllTitlesViewV2
-    webHomeViewV3?: WebHomeViewV3
+    isFeaturedUpdated?: boolean;
+    titleRankingView?: TitleRankingView;
+    titleDetailView?: TitleDetailView;
+    mangaViewer?: MangaViewer;
+    allTitlesViewV2?: AllTitlesViewV2;
+    webHomeViewV3?: WebHomeViewV3;
+    featuredTitlesView?: {
+        contents: [
+            {
+                titleList: {
+                    listName: 'WEEKLY SHONEN JUMP' | 'JUMP PLUS' | 'OTHERS' | 'Re edition' | '"First Read Free" Eligible Titles!';
+                    featuredTitles: Title[];
+                }
+            }
+        ]
+    };
 }
 
 interface TitleRankingView {
-    titles: Title[]
+    titles: Title[];
 }
 
 interface AllTitlesViewV2 {
-    AllTitlesGroup: AllTitlesGroup[]
+    AllTitlesGroup: AllTitlesGroup[];
 }
+
 interface AllTitlesGroup {
-    theTitle: string
-    titles: Title[]
+    theTitle: string;
+    titles: Title[];
 }
 
 interface WebHomeViewV3 {
-    groups: UpdatedTitleV2Group[]
+    groups: UpdatedTitleV2Group[];
 }
 
 interface UpdatedTitleV2Group {
-    groupName: string,
-    titleGroups: OriginalTitleGroup[]
+    groupName: string;
+    titleGroups: OriginalTitleGroup[];
 }
 
 interface OriginalTitleGroup {
-    theTitle: string,
-    titles: UpdatedTitle[]
+    theTitle: string;
+    titles: UpdatedTitle[];
 }
 
 interface UpdatedTitle {
-    title: Title
+    title: Title;
 }
-
 
 class ErrorResult {
     popups: Popup[] = []
@@ -65,28 +75,27 @@ class Popup {
         if (language) this.language = language
         else this.language = Language.ENGLISH
     }
-
-
 }
 
 export enum Language {
-    ENGLISH = "ENGLISH",
-    SPANISH = "SPANISH",
-    FRENCH = "FRENCH",
-    INDONESIAN = "INDONESIAN",
-    PORTUGUESE_BR = "PORTUGUESE_BR",
-    RUSSIAN = "RUSSIAN",
-    THAI = "THAI",
-    VIETNAMESE = "VIETNAMESE",
+    ENGLISH = 'ENGLISH',
+    SPANISH = 'SPANISH',
+    FRENCH = 'FRENCH',
+    INDONESIAN = 'INDONESIAN',
+    PORTUGUESE_BR = 'PORTUGUESE_BR',
+    RUSSIAN = 'RUSSIAN',
+    THAI = 'THAI',
+    VIETNAMESE = 'VIETNAMESE'
 }
+
 export class Title {
-    titleId: number
-    name: string
-    author?: string
-    portraitImageUrl: string
-    landscapeImageUrl: string
-    viewCount: number = 0
-    language: Language = Language.ENGLISH
+    titleId: number;
+    name: string;
+    author?: string;
+    portraitImageUrl: string;
+    landscapeImageUrl: string;
+    viewCount = 0;
+    language: Language = Language.ENGLISH;
 
     constructor(titleId: number, name: string, portraitImageUrl: string, landscapeImageUrl: string, author?: string) {
         this.titleId = titleId
@@ -99,26 +108,24 @@ export class Title {
 }
 
 export class TitleDetailView {
-    title?: Title
-    titleImageUrl?: string
-    overview?: string
-    backgroundImageUrl?: string
-    nextTimeStamp: number = 0
-    viewingPeriodDescription: string = ""
-    nonAppearanceInfo: string = ""
-    firstChapterList: Chapter[] = []
-    lastChapterList: Chapter[] = []
-    isSimulReleased: boolean = false
-    chaptersDescending: boolean = true
-
-    constructor() { }
+    title?: Title;
+    titleImageUrl?: string;
+    overview?: string;
+    backgroundImageUrl?: string;
+    nextTimeStamp = 0;
+    viewingPeriodDescription = '';
+    nonAppearanceInfo = '';
+    firstChapterList: Chapter[] = [];
+    lastChapterList: Chapter[] = [];
+    isSimulReleased = false;
+    chaptersDescending = true;
 
     private get isWebtoon(): boolean {
         return this.firstChapterList.every(chapter => chapter.isVerticalOnly) && this.lastChapterList.every(chapter => chapter.isVerticalOnly)
     }
 
     private get isOneShot(): boolean {
-        return this.chapterCount == 1 && this.firstChapterList.at(0)?.name?.localeCompare("one-shot", undefined, { "sensitivity": "base" }) == 0
+        return this.chapterCount == 1 && this.firstChapterList.at(0)?.name?.localeCompare('one-shot', undefined, { 'sensitivity': 'base' }) == 0
     }
 
     private get chapterCount(): number {
@@ -139,29 +146,28 @@ export class TitleDetailView {
 
     private get genres(): string[] {
         const genres = []
-        if (this.isSimulReleased && !this.isReEdition && !this.isOneShot) genres.push("Simulrelease")
+        if (this.isSimulReleased && !this.isReEdition && !this.isOneShot) genres.push('Simulrelease')
 
-        if (this.isOneShot) genres.push("One-shot")
+        if (this.isOneShot) genres.push('One-shot')
 
-        if (this.isReEdition) genres.push("Re-edition")
+        if (this.isReEdition) genres.push('Re-edition')
 
-        if (this.isWebtoon) genres.push("Webtoon")
+        if (this.isWebtoon) genres.push('Webtoon')
 
         return genres
     }
 
     static fromJson(str: string): TitleDetailView {
+        const bopp = JSON.parse(str) as MangaPlusResponse
 
-        const bopp = JSON.parse(str) as MangaPlusResponse;
+        if (bopp.success?.titleDetailView === undefined) throw Error('Cannot find manga')
 
-        if (bopp.success?.titleDetailView === undefined) throw Error("Cannot find manga")
+        const json = bopp.success.titleDetailView
 
-        const json = bopp.success.titleDetailView;
-
-        const obj = new TitleDetailView();
+        const obj = new TitleDetailView()
 
         if (json.title === undefined) {
-            throw Error("Cannot find title")
+            throw Error('Cannot find title')
         }
 
         const title = json.title
@@ -173,36 +179,33 @@ export class TitleDetailView {
         obj.nextTimeStamp = json.nextTimeStamp
         obj.viewingPeriodDescription = json.viewingPeriodDescription
         obj.nonAppearanceInfo = json.nonAppearanceInfo
-        obj.firstChapterList = json.firstChapterList?.map(chapter => Object.assign(new Chapter(1, 1, "", 1, 1), chapter))
-        obj.lastChapterList = json.lastChapterList?.map(chapter => Object.assign(new Chapter(1, 1, "", 1, 1), chapter))
-
+        obj.firstChapterList = json.firstChapterList?.map(chapter => Object.assign(new Chapter(1, 1, '', 1, 1), chapter))
+        obj.lastChapterList = json.lastChapterList?.map(chapter => Object.assign(new Chapter(1, 1, '', 1, 1), chapter))
 
         return obj
     }
 
     toSourceManga(): SourceManga {
-        const authors = this.title!.author?.split("/")
+        const authors = this.title?.author?.split('/')
         return App.createSourceManga({
-            id: this.title!.titleId.toString(),
-            mangaInfo:
-                App.createMangaInfo({
-                    image: this.title!.portraitImageUrl,
-
-                    titles: [this.title!.name],
-                    author: authors ? authors[0]?.trimEnd() : this.title!.author,
-                    artist: authors ? authors[1]?.trimStart() : this.title!.author,
-                    desc: (this.overview ?? "") + "\n\n" + this.viewingPeriodDescription ?? "",
-                    tags: [App.createTagSection({
-                        id: "0",
-                        label: "genres",
+            id: this.title?.titleId.toString() ?? '',
+            mangaInfo: App.createMangaInfo({
+                image: this.title?.portraitImageUrl ?? '',
+                titles: [this.title?.name ?? ''],
+                author: authors ? authors[0]?.trimEnd() : this.title?.author ?? '',
+                artist: authors ? authors[1]?.trimStart() : this.title?.author ?? '',
+                desc: (this.overview ?? '') + '\n\n' + (this.viewingPeriodDescription ?? ''),
+                tags: [
+                    App.createTagSection({
+                        id: '0',
+                        label: 'genres',
                         tags: this.genres.map(genre => App.createTag({ id: genre, label: genre }))
-                    })],
-                    status: this.isCompleted ? "Completed" : this.isOnHiatus ? "On hiatus" : "Ongoing",
-
-                })
-        });
+                    })
+                ],
+                status: this.isCompleted ? 'Completed' : this.isOnHiatus ? 'On hiatus' : 'Ongoing'
+            })
+        })
     }
-
 
     private static COMPLETED_REGEX = /completado|complete|completo/
     private static HIATUS_REGEX = /on a hiatus/i
@@ -210,30 +213,30 @@ export class TitleDetailView {
 }
 
 interface MangaViewer {
-    pages: MangaPlusPage[]
-    titleId?: number
-    titleName?: string
+    pages: MangaPlusPage[];
+    titleId?: number;
+    titleName?: string;
 }
 
 interface MangaPlusPage {
-    mangaPage?: MangaPage
+    mangaPage?: MangaPage;
 }
 
 interface MangaPage {
-    imageUrl: string
-    width: number
-    height: number
-    encryptionKey?: string
+    imageUrl: string;
+    width: number;
+    height: number;
+    encryptionKey?: string;
 }
 
 class Chapter {
-    titleId: number
-    chapterId: number
-    name: string
-    subTitle?: string
-    startTimeStamp: number
-    endTimeStamp: number
-    isVerticalOnly: boolean = false
+    titleId: number;
+    chapterId: number;
+    name: string;
+    subTitle?: string;
+    startTimeStamp: number;
+    endTimeStamp: number;
+    isVerticalOnly = false;
 
     constructor(titleId: number, chapterId: number, name: string, startTimeStamp: number, endTimeStamp: number) {
         this.titleId = titleId
@@ -244,15 +247,15 @@ class Chapter {
     }
 
     public get isExpired(): boolean {
-        return this.subTitle == null;
+        return this.subTitle == null
     }
 
     toSChapter() {
+        const chapNum = parseFloat(this.name.slice(this.name.lastIndexOf('#') + 1))
 
-        const chapNum = parseFloat(this.name.slice(this.name.lastIndexOf("#") + 1))
         return App.createChapter({
             id: this.chapterId.toString(),
-            name: this.subTitle ? this.subTitle : "",
+            name: this.subTitle ? this.subTitle : '',
             chapNum: isNaN(chapNum) ? 0 : chapNum,
             sortingIndex: isNaN(chapNum) ? -1 : chapNum,
             time: new Date(this.startTimeStamp * 1000)

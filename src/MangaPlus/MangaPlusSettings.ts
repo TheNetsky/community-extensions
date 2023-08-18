@@ -1,29 +1,26 @@
-import { DUIButton, DUINavigationButton, SourceStateManager } from '@paperback/types'
+import {
+    DUIButton,
+    DUINavigationButton,
+    SourceStateManager
+} from '@paperback/types'
+
 import { Language } from './MangaPlusHelper'
 
-export const getLanguages = async (
-    stateManager: SourceStateManager
-): Promise<string[]> => {
+export const getLanguages = async (stateManager: SourceStateManager): Promise<string[]> => {
     return (await stateManager.retrieve('languages') as string[]) ?? [Language.ENGLISH]
 }
 
-export const getSplitImages = async (
-    stateManager: SourceStateManager
-): Promise<string> => {
-    return (await stateManager.retrieve('split_images') as string) ?? "yes"
+export const getSplitImages = async (stateManager: SourceStateManager): Promise<string> => {
+    return (await stateManager.retrieve('split_images') as string) ?? 'yes'
 }
 
-export const getResolution = async (
-    stateManager: SourceStateManager
-): Promise<string> => {
+export const getResolution = async (stateManager: SourceStateManager): Promise<string> => {
     return (
         (await stateManager.retrieve('image_resolution') as string) ?? 'high'
     )
 }
 
-export const contentSettings = (
-    stateManager: SourceStateManager
-): DUINavigationButton => {
+export const contentSettings = (stateManager: SourceStateManager): DUINavigationButton => {
     return App.createDUINavigationButton({
         id: 'content_settings',
         label: 'Content Settings',
@@ -32,12 +29,12 @@ export const contentSettings = (
                 [
                     App.createDUISection({
                         isHidden: false,
-                        id: "content",
+                        id: 'content',
                         rows: async () => {
                             await Promise.all([
                                 getLanguages(stateManager),
                                 getSplitImages(stateManager),
-                                getResolution(stateManager),
+                                getResolution(stateManager)
                             ])
 
                             return await [
@@ -76,31 +73,30 @@ export const contentSettings = (
                                         }
                                     },
                                     value: App.createDUIBinding({
-                                        get: async () =>  getLanguages(stateManager) ,
-                                        set: async (value: string[]) => {await stateManager.store('languages', value) }
+                                        get: async () => getLanguages(stateManager),
+                                        set: async (value: string[]) => { await stateManager.store('languages', value) }
                                     }),
-                                    allowsMultiselect: true,
-
+                                    allowsMultiselect: true
                                 }),
-
 
                                 App.createDUISwitch({
                                     id: 'split_images',
                                     label: 'Split double pages',
                                     value: App.createDUIBinding({
-                                        get: async () => await getSplitImages(stateManager) == "yes",
-                                        set: async (value: boolean) => {await stateManager.store('split_images', value ? "yes" : "no") }
-                                        }),
-                                    }),
+                                        get: async () => await getSplitImages(stateManager) == 'yes',
+                                        set: async (value: boolean) => { await stateManager.store('split_images', value ? 'yes' : 'no') }
+                                    })
+                                }),
 
                                 App.createDUISelect({
                                     id: 'image_resolution',
                                     label: 'Image resolution',
-                                    options: ["low", "high", "super_high"],
+                                    options: ['low', 'high', 'super_high'],
                                     value: App.createDUIBinding({
-                                        get: async () => [await getResolution(stateManager)] ,
+                                        get: async () => [await getResolution(stateManager)],
                                         set: async (value: string[]) => {
-                                            await stateManager.store('image_resolution', value[0]) }
+                                            await stateManager.store('image_resolution', value[0])
+                                        }
                                     }),
                                     allowsMultiselect: false,
                                     labelResolver: async (option: string) => {
@@ -114,17 +110,17 @@ export const contentSettings = (
                                             default:
                                                 return ''
                                         }
-                                    },
-                                }),
+                                    }
+                                })
 
                             ]
 
-                        },
+                        }
                     })
                 ]
         })
     })
-    
+
 }
 
 export function resetSettings(stateManager: SourceStateManager): DUIButton {
@@ -133,8 +129,8 @@ export function resetSettings(stateManager: SourceStateManager): DUIButton {
         label: 'Reset to Default',
         onTap: async () => {
             await stateManager.store('languages', [Language.ENGLISH]),
-            await stateManager.store('split_images', "yes"),
-            await stateManager.store('image_resolution', "high")
+            await stateManager.store('split_images', 'yes'),
+            await stateManager.store('image_resolution', 'high')
         }
     })
 }
