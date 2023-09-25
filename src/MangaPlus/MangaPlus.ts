@@ -37,7 +37,7 @@ const API_URL = 'https://jumpg-webapi.tokyo-cdn.com/api'
 const langCode = Language.ENGLISH
 
 export const MangaPlusInfo: SourceInfo = {
-    version: '2.0.0',
+    version: '2.0.1',
     name: 'MangaPlus',
     icon: 'icon.png',
     author: 'Rinto-kun',
@@ -147,7 +147,7 @@ export class MangaPlus implements SearchResultsProviding, MangaProviding, Chapte
 
         const pages = result.success.mangaViewer?.pages
             .map(page => page.mangaPage)
-            .filter(page => page !== null)
+            .filter(page => page)
             .map((page) => page?.encryptionKey ? `${page?.imageUrl}#${page?.encryptionKey}` : '')
 
         return App.createChapterDetails({
