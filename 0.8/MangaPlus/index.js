@@ -468,7 +468,7 @@ const BASE_URL = 'https://mangaplus.shueisha.co.jp';
 const API_URL = 'https://jumpg-webapi.tokyo-cdn.com/api';
 const langCode = MangaPlusHelper_1.Language.ENGLISH;
 exports.MangaPlusInfo = {
-    version: '2.0.0',
+    version: '2.0.1',
     name: 'MangaPlus',
     icon: 'icon.png',
     author: 'Rinto-kun',
@@ -555,7 +555,7 @@ class MangaPlus {
         }
         const pages = result.success.mangaViewer?.pages
             .map(page => page.mangaPage)
-            .filter(page => page !== null)
+            .filter(page => page)
             .map((page) => page?.encryptionKey ? `${page?.imageUrl}#${page?.encryptionKey}` : '');
         return App.createChapterDetails({
             id: chapterId,
