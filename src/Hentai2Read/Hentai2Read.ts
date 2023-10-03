@@ -34,7 +34,7 @@ export const Hentai2ReadInfo: SourceInfo = {
     author: 'EmZedH',
     authorWebsite: 'https://github.com/EmZedH',
     description: 'Extension that pulls manga from hentai2read.com',
-    contentRating: ContentRating.MATURE,
+    contentRating: ContentRating.ADULT,
     websiteBaseURL: DOMAIN,
     intents: SourceIntents.MANGA_CHAPTERS | SourceIntents.HOMEPAGE_SECTIONS,
     sourceTags: [
