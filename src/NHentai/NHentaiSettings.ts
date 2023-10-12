@@ -31,7 +31,7 @@ export const settings = (stateManager: SourceStateManager): DUINavigationButton 
                 return Promise.resolve([
                     App.createDUISection({
                         id: 'content',
-                        footer: 'Tags with a space in it, need to be replace with a "-"\nExample: "-big breasts" will be "-big-breasts"\nTo exclude tags add the "-" in front, to include add the "+".',
+                        footer: 'Tags with a space or "-" in them need to be double quoted. \nExample: "love-saber" and -"big breasts"\nTo exclude tags, add a "-" in the front. To include, add a "+".',
                         rows: async () => {
                             await Promise.all([
                                 getLanguages(stateManager),
@@ -68,7 +68,12 @@ export const settings = (stateManager: SourceStateManager): DUINavigationButton 
                                     label: 'Additional arguments',
                                     value: App.createDUIBinding({
                                         get: () => getExtraArgs(stateManager),
-                                        set: async (newValue) => await stateManager.store('extra_args', newValue)
+                                        set: async (newValue: string) => {
+                                            await stateManager.store(
+                                                'extra_args',
+                                                newValue.replaceAll(/‘|’/g, '\'').replaceAll(/“|”/g, '"')
+                                            )
+                                        }
                                     })
                                 })
                             ]
