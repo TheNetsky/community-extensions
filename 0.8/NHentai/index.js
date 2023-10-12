@@ -468,7 +468,7 @@ const NHentaiSettings_1 = require("./NHentaiSettings");
 const tags_json_1 = require("./tags.json");
 const NHENTAI_URL = 'https://nhentai.net';
 exports.NHentaiInfo = {
-    version: '4.0.5',
+    version: '4.0.6',
     name: 'nhentai',
     icon: 'icon.png',
     author: 'NotMarek & Netsky',
@@ -964,7 +964,7 @@ const settings = (stateManager) => {
                 return Promise.resolve([
                     App.createDUISection({
                         id: 'content',
-                        footer: 'Tags with a space in it, need to be replace with a "-"\nExample: "-big breasts" will be "-big-breasts"\nTo exclude tags add the "-" in front, to include add the "+".',
+                        footer: 'Tags with a space or "-" in them need to be double quoted. \nExample: "love-saber" and -"big breasts"\nTo exclude tags, add a "-" in the front. To include, add a "+".',
                         rows: async () => {
                             await Promise.all([
                                 (0, exports.getLanguages)(stateManager),
@@ -999,7 +999,9 @@ const settings = (stateManager) => {
                                     label: 'Additional arguments',
                                     value: App.createDUIBinding({
                                         get: () => (0, exports.getExtraArgs)(stateManager),
-                                        set: async (newValue) => await stateManager.store('extra_args', newValue)
+                                        set: async (newValue) => {
+                                            await stateManager.store('extra_args', newValue.replaceAll(/‘|’/g, '\'').replaceAll(/“|”/g, '"'));
+                                        }
                                     })
                                 })
                             ];
