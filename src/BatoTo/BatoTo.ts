@@ -126,7 +126,7 @@ export class BatoTo implements SearchResultsProviding, MangaProviding, ChapterPr
 
     async getViewMoreItems(homepageSectionId: string, metadata: any): Promise<PagedResults> {
         const page: number = metadata?.page ?? 1
-        let param = ''
+        let param: string
 
         switch (homepageSectionId) {
             case 'popular_updates':
@@ -141,7 +141,7 @@ export class BatoTo implements SearchResultsProviding, MangaProviding, ChapterPr
         const request = App.createRequest({
             url: `${BATO_DOMAIN}/browse`,
             method: 'GET',
-            param
+            param: param
         })
 
         const response = await this.requestManager.schedule(request, 1)
@@ -152,7 +152,7 @@ export class BatoTo implements SearchResultsProviding, MangaProviding, ChapterPr
         metadata = !isLastPage($) ? { page: page + 1 } : undefined
         return App.createPagedResults({
             results: manga,
-            metadata
+            metadata: metadata
         })
     }
 
@@ -182,7 +182,7 @@ export class BatoTo implements SearchResultsProviding, MangaProviding, ChapterPr
         metadata = !isLastPage($) ? { page: page + 1 } : undefined
         return App.createPagedResults({
             results: manga,
-            metadata
+            metadata: metadata
         })
     }
 
