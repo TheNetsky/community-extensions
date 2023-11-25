@@ -23,6 +23,7 @@ import {
     isLastPage,
     parseChapterDetails,
     parseChapterList,
+    parseChapterURL,
     parseHomeSections,
     parseMangaDetails,
     parseSearch,
@@ -114,14 +115,30 @@ implements
         mangaId: string,
         chapterId: string
     ): Promise<ChapterDetails> {
-        const request = App.createRequest({
-            url: `${chapterId}`,
+        let request: Request
+        let response: Response
+        let $: CheerioStatic
+
+        // Find chapterUrl
+        request = App.createRequest({
+            url: `${VYVY_DOMAIN}/manga/${mangaId}`,
             method: 'GET'
         })
-
-        const response = await this.requestManager.schedule(request, 1)
+        response = await this.requestManager.schedule(request, 1)
         this.CloudFlareError(response.status)
-        const $ = this.cheerio.load(response.data as string)
+        $ = this.cheerio.load(response.data as string)
+
+        const chapterUrl = parseChapterURL($, chapterId)
+
+        // Find pages
+        request = App.createRequest({
+            url: `${chapterUrl}`,
+            method: 'GET'
+        })
+        response = await this.requestManager.schedule(request, 1)
+        this.CloudFlareError(response.status)
+        $ = this.cheerio.load(response.data as string)
+
         return parseChapterDetails($, mangaId, chapterId)
     }
 

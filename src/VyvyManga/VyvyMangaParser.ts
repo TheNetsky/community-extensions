@@ -98,9 +98,9 @@ export const parseChapterList = (
         const title: string = $('span', chapter).text().trim()
 
         const chapterAttr = chapter.attribs
-        const chapterUrl: string = chapterAttr.href ?? ''
+        const chapterId: string = chapterAttr.id ?? ''
 
-        if (!chapterUrl) continue
+        if (!chapterId) continue
 
         const chapNumRegex = chapterAttr.id?.match(/(\d+)(?:[-.]\d+)?/)
 
@@ -113,7 +113,7 @@ export const parseChapterList = (
         const date = parseDate($('p', chapter).text().trim())
 
         chapters.push({
-            id: chapterUrl,
+            id: chapterId,
             name: title,
             langCode: 'ENG',
             chapNum: chapNum,
@@ -133,6 +133,26 @@ export const parseChapterList = (
         chapter.sortingIndex += chapters.length
         return App.createChapter(chapter)
     })
+}
+
+export const parseChapterURL = (
+    $: CheerioStatic,
+    chapterId: string
+): string => {
+    let chapterUrl = ''
+
+    for (const chapter of $('.list-group > a').toArray()) {
+        const chapterAttr = chapter.attribs
+
+        if (chapterAttr.id == chapterId) {
+            chapterUrl = chapterAttr.href ?? ''
+            break
+        }
+    }
+
+    if (chapterUrl == '') throw new Error(`Failed to find URL for chapterId: ${chapterId}`)
+
+    return chapterUrl
 }
 
 export const parseChapterDetails = (
