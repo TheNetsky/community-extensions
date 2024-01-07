@@ -139,7 +139,7 @@ export const parseChapterDetails = ($: CheerioStatic, mangaId: string, chapterId
 
     const batoPass = eval(script.match(/const\s+batoPass\s*=\s*(.*?);/)?.[1] ?? '').toString()
     const batoWord = (script.match(/const\s+batoWord\s*=\s*"(.*)";/)?.[1] ?? '')
-    const imgList = JSON.parse(script.match(/const\s+imgHttpLis\s*=\s*(.*?);/)?.[1] ?? '')
+    const imgList = JSON.parse(script.match(/const\s+imgHttps\s*=\s*(.*?);/)?.[1] ?? '')
     const tknList = JSON.parse(CryptoJS.AES.decrypt(batoWord, batoPass).toString(CryptoJS.enc.Utf8))
 
     for (let i = 0; i < Math.min(imgList.length, tknList.length); i++) {
