@@ -1,5 +1,4 @@
 import {
-    BadgeColor,
     Chapter,
     ChapterDetails,
     ChapterProviding,
@@ -34,7 +33,7 @@ import {
 const BATO_DOMAIN = 'https://bato.to'
 
 export const BatoToInfo: SourceInfo = {
-    version: '3.0.2',
+    version: '3.0.3',
     name: 'BatoTo',
     icon: 'icon.png',
     author: 'Nicholas',
