@@ -3474,7 +3474,7 @@ exports.MangaDexInfo = {
     description: 'Extension that pulls manga from MangaDex',
     icon: 'icon.png',
     name: 'MangaDex',
-    version: '3.0.2',
+    version: '3.0.3',
     authorWebsite: 'https://github.com/nar1n',
     websiteBaseURL: MANGADEX_DOMAIN,
     contentRating: types_1.ContentRating.EVERYONE,
@@ -3725,7 +3725,7 @@ class MangaDex {
         const searchType = query.title?.match(/[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}/i) ? 'ids[]' : 'title';
         const url = new MangaDexHelper_1.URLBuilder(this.MANGADEX_API)
             .addPathComponent('manga')
-            .addQueryParameter(searchType, (query.title?.length ?? 0) > 0 ? encodeURIComponent(query.title) : undefined)
+            .addQueryParameter(searchType, (query.title?.length ?? 0) > 0 ? encodeURIComponent(query.title).replace(/%20/g, '+') : undefined)
             .addQueryParameter('limit', 100)
             .addQueryParameter('hasAvailableChapters', true)
             .addQueryParameter('availableTranslatedLanguage', languages)
