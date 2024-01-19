@@ -358,7 +358,7 @@ export class MangaDex implements ChapterProviding, SearchResultsProviding, HomeP
 
         const url = new URLBuilder(this.MANGADEX_API)
             .addPathComponent('manga')
-            .addQueryParameter(searchType, (query.title?.length ?? 0) > 0 ? encodeURIComponent(query.title!).replace(/%20/g, '+') : undefined)
+            .addQueryParameter(searchType, (query.title?.length ?? 0) > 0 ? query.title : undefined)
             .addQueryParameter('limit', 100)
             .addQueryParameter('hasAvailableChapters', true)
             .addQueryParameter('availableTranslatedLanguage', languages)
