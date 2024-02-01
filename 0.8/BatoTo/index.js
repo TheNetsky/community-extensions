@@ -27840,7 +27840,7 @@ const types_1 = require("@paperback/types");
 const BatoToParser_1 = require("./BatoToParser");
 const BATO_DOMAIN = 'https://bato.to';
 exports.BatoToInfo = {
-    version: '3.0.3',
+    version: '3.0.4',
     name: 'BatoTo',
     icon: 'icon.png',
     author: 'Nicholas',
@@ -28812,7 +28812,6 @@ const parseChapterList = ($, mangaId) => {
 };
 exports.parseChapterList = parseChapterList;
 const parseChapterDetails = ($, mangaId, chapterId) => {
-    const pages = [];
     // Get all of the pages
     const scriptObj = $('script').toArray().find((obj) => {
         const data = obj.children[0]?.data ?? '';
@@ -28823,9 +28822,7 @@ const parseChapterDetails = ($, mangaId, chapterId) => {
     const batoWord = (script.match(/const\s+batoWord\s*=\s*"(.*)";/)?.[1] ?? '');
     const imgList = JSON.parse(script.match(/const\s+imgHttps\s*=\s*(.*?);/)?.[1] ?? '');
     const tknList = JSON.parse(CryptoJS.AES.decrypt(batoWord, batoPass).toString(CryptoJS.enc.Utf8));
-    for (let i = 0; i < Math.min(imgList.length, tknList.length); i++) {
-        pages.push(`${imgList[i]}?${tknList[i]}`);
-    }
+    const pages = imgList.map((value, index) => `${value}?${tknList[index]}`);
     const chapterDetails = App.createChapterDetails({
         id: chapterId,
         mangaId: mangaId,
