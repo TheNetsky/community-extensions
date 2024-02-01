@@ -129,7 +129,6 @@ export const parseChapterList = ($: CheerioStatic, mangaId: string): Chapter[] =
 }
 
 export const parseChapterDetails = ($: CheerioStatic, mangaId: string, chapterId: string): ChapterDetails => {
-    const pages: string[] = []
     // Get all of the pages
     const scriptObj = $('script').toArray().find((obj: CheerioElement) => {
         const data = obj.children[0]?.data ?? ''
@@ -142,9 +141,7 @@ export const parseChapterDetails = ($: CheerioStatic, mangaId: string, chapterId
     const imgList = JSON.parse(script.match(/const\s+imgHttps\s*=\s*(.*?);/)?.[1] ?? '')
     const tknList = JSON.parse(CryptoJS.AES.decrypt(batoWord, batoPass).toString(CryptoJS.enc.Utf8))
 
-    for (let i = 0; i < Math.min(imgList.length, tknList.length); i++) {
-        pages.push(`${imgList[i]}?${tknList[i]}`)
-    }
+    const pages = imgList.map((value: string, index: number) => `${value}?${tknList[index]}`)
 
     const chapterDetails = App.createChapterDetails({
         id: chapterId,
