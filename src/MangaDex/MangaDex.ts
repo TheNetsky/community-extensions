@@ -64,7 +64,7 @@ export const MangaDexInfo: SourceInfo = {
     description: 'Extension that pulls manga from MangaDex',
     icon: 'icon.png',
     name: 'MangaDex',
-    version: '3.0.4',
+    version: '3.0.5',
     authorWebsite: 'https://github.com/nar1n',
     websiteBaseURL: MANGADEX_DOMAIN,
     contentRating: ContentRating.EVERYONE,
@@ -358,7 +358,7 @@ export class MangaDex implements ChapterProviding, SearchResultsProviding, HomeP
 
         const url = new URLBuilder(this.MANGADEX_API)
             .addPathComponent('manga')
-            .addQueryParameter(searchType, (query.title?.length ?? 0) > 0 ? query.title : undefined)
+            .addQueryParameter(searchType, query?.title?.replace(/ /g, '+') || '')
             .addQueryParameter('limit', 100)
             .addQueryParameter('hasAvailableChapters', true)
             .addQueryParameter('availableTranslatedLanguage', languages)
