@@ -252,15 +252,11 @@ export const parseSearch = ($: CheerioStatic, langFilter: boolean, langs: string
         const title: string = $('.item-title', obj).text() ?? ''
         const btcode = $('em', obj).attr('data-lang') ?? 'en,en_us'
         const lang: string = btcode ? BTLanguages.getLangCode(btcode) : '🇬🇧'
-
-        console.log(JSON.stringify(langs))
-
-        if (langFilter && !langs.includes(btcode)) continue
-
         const subtitle = lang + ' ' + $('.visited', obj).text().trim()
         const image = $('img', obj).attr('src') ?? ''
 
         if (!id || !title) continue
+        if (langFilter && !langs.includes(btcode)) continue
 
         mangas.push(App.createPartialSourceManga({
             image: image,
