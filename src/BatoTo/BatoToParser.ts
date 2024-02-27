@@ -14,8 +14,7 @@ import {
     BTLanguages
 } from './BatoToHelper'
 
-const CryptoJS = require('./external/crypto-js.min.js') // 4.1.1
-
+import * as CryptoJS from './external/crypto-js.min.js' // 4.1.1
 import entities = require('entities')
 
 export const parseMangaDetails = ($: CheerioStatic, mangaId: string): SourceManga => {
@@ -246,13 +245,18 @@ export const parseTags = (): TagSection[] => {
     return tagSections
 }
 
-export const parseSearch = ($: CheerioStatic): PartialSourceManga[] => {
+export const parseSearch = ($: CheerioStatic, langFilter: boolean, langs: string[]): PartialSourceManga[] => {
     const mangas: PartialSourceManga[] = []
     for (const obj of $('.item', '#series-list').toArray()) {
         const id = $('.item-cover', obj).attr('href')?.replace('/series/', '')?.trim().split('/')[0] ?? ''
         const title: string = $('.item-title', obj).text() ?? ''
-        const btcode = $('em', obj).attr('data-lang')
+        const btcode = $('em', obj).attr('data-lang') ?? 'en,en_us'
         const lang: string = btcode ? BTLanguages.getLangCode(btcode) : '🇬🇧'
+
+        console.log(JSON.stringify(langs))
+
+        if (langFilter && !langs.includes(btcode)) continue
+
         const subtitle = lang + ' ' + $('.visited', obj).text().trim()
         const image = $('img', obj).attr('src') ?? ''
 

@@ -702,3 +702,7 @@ class BTLanguagesClass {
 }
 
 export const BTLanguages = new BTLanguagesClass()
+
+export interface Metadata {
+    page: number;
+}
