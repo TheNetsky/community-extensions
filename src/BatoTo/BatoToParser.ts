@@ -14,7 +14,7 @@ import {
     BTLanguages
 } from './BatoToHelper'
 
-import * as CryptoJS from './external/crypto-js.min.js' // 4.1.1
+import * as CryptoJS from './external/crypto-js.min.js' // 4.2.0
 import entities = require('entities')
 
 export const parseMangaDetails = ($: CheerioStatic, mangaId: string): SourceManga => {
