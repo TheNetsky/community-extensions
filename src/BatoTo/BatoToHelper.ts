@@ -161,7 +161,7 @@ class BTLanguagesClass {
     Languages: Language[] = [
         {
             name: 'English',
-            BTCode: 'en',
+            BTCode: 'en,en_us',
             lang: '🇬🇧',
             default: true
         },
@@ -394,11 +394,6 @@ class BTLanguagesClass {
             name: 'Croatian',
             BTCode: 'hr',
             lang: '🇭🇷'
-        },
-        {
-            name: 'English (United States)',
-            BTCode: 'en_us',
-            lang: '🇺🇸'
         },
         {
             name: 'Esperanto',
