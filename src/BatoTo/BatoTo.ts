@@ -1,8 +1,10 @@
 import {
+    BadgeColor,
     Chapter,
     ChapterDetails,
     ChapterProviding,
     ContentRating,
+    DUISection,
     HomePageSectionsProviding,
     HomeSection,
     MangaProviding,
@@ -30,10 +32,20 @@ import {
     parseViewMore
 } from './BatoToParser'
 
+import {
+    BTLanguages,
+    Metadata
+} from './BatoToHelper'
+
+import {
+    languageSettings,
+    resetSettings
+} from './BatoToSettings'
+
 const BATO_DOMAIN = 'https://bato.to'
 
 export const BatoToInfo: SourceInfo = {
-    version: '3.0.4',
+    version: '3.1.0',
     name: 'BatoTo',
     icon: 'icon.png',
     author: 'Nicholas',
@@ -41,8 +53,13 @@ export const BatoToInfo: SourceInfo = {
     description: 'Extension that pulls manga from bato.to',
     contentRating: ContentRating.MATURE,
     websiteBaseURL: BATO_DOMAIN,
-    sourceTags: [],
-    intents: SourceIntents.MANGA_CHAPTERS | SourceIntents.HOMEPAGE_SECTIONS | SourceIntents.CLOUDFLARE_BYPASS_REQUIRED
+    sourceTags: [
+        {
+            text: 'Multi Language',
+            type: BadgeColor.BLUE
+        }
+    ],
+    intents: SourceIntents.MANGA_CHAPTERS | SourceIntents.HOMEPAGE_SECTIONS | SourceIntents.SETTINGS_UI | SourceIntents.CLOUDFLARE_BYPASS_REQUIRED
 }
 
 export class BatoTo implements SearchResultsProviding, MangaProviding, ChapterProviding, HomePageSectionsProviding {
@@ -72,6 +89,20 @@ export class BatoTo implements SearchResultsProviding, MangaProviding, ChapterPr
             }
         }
     });
+
+    stateManager = App.createSourceStateManager()
+
+    async getSourceMenu(): Promise<DUISection> {
+        return Promise.resolve(App.createDUISection({
+            id: 'main',
+            header: 'Source Settings',
+            isHidden: false,
+            rows: async () => [
+                languageSettings(this.stateManager),
+                resetSettings(this.stateManager)
+            ]
+        }))
+    }
 
     getMangaShareUrl(mangaId: string): string { return `${BATO_DOMAIN}/series/${mangaId}` }
 
@@ -123,7 +154,7 @@ export class BatoTo implements SearchResultsProviding, MangaProviding, ChapterPr
         parseHomeSections($, sectionCallback)
     }
 
-    async getViewMoreItems(homepageSectionId: string, metadata: any): Promise<PagedResults> {
+    async getViewMoreItems(homepageSectionId: string, metadata: Metadata | undefined): Promise<PagedResults> {
         const page: number = metadata?.page ?? 1
         let param = ''
 
@@ -137,6 +168,11 @@ export class BatoTo implements SearchResultsProviding, MangaProviding, ChapterPr
             default:
                 throw new Error('Requested to getViewMoreItems for a section ID which doesn\'t exist')
         }
+
+        const langHomeFilter: boolean = await this.stateManager.retrieve('language_home_filter') ?? false
+        const langs: string[] = langHomeFilter ? await this.stateManager.retrieve('languages') : BTLanguages.getDefault()
+        param += langs ? `&langs=${langs.join(',')}` : ''
+
         const request = App.createRequest({
             url: `${BATO_DOMAIN}/browse`,
             method: 'GET',
@@ -155,7 +191,7 @@ export class BatoTo implements SearchResultsProviding, MangaProviding, ChapterPr
         })
     }
 
-    async getSearchResults(query: SearchRequest, metadata: any): Promise<PagedResults> {
+    async getSearchResults(query: SearchRequest, metadata: Metadata | undefined): Promise<PagedResults> {
         const page: number = metadata?.page ?? 1
         let request
 
@@ -165,18 +201,20 @@ export class BatoTo implements SearchResultsProviding, MangaProviding, ChapterPr
                 url: `${BATO_DOMAIN}/search?word=${encodeURI(query.title ?? '')}&page=${page}`,
                 method: 'GET'
             })
-            // Tag Search
+        // Tag Search
         } else {
             request = App.createRequest({
-                url: `${BATO_DOMAIN}/browse`,
-                method: 'GET',
-                param: `?genres=${query?.includedTags?.map((x: Tag) => x.id)[0]}&page=${page}`
+                url: `${BATO_DOMAIN}/browse?genres=${query?.includedTags?.map((x: Tag) => x.id)[0]}&page=${page}`,
+                method: 'GET'
             })
         }
 
+        const langSearchFilter: boolean = await this.stateManager.retrieve('language_search_filter') ?? false
+        const langs: string[] = langSearchFilter ? await this.stateManager.retrieve('languages') : BTLanguages.getDefault()
+
         const response = await this.requestManager.schedule(request, 1)
         const $ = this.cheerio.load(response.data as string)
-        const manga = parseSearch($)
+        const manga = parseSearch($, langSearchFilter, langs)
 
         metadata = !isLastPage($) ? { page: page + 1 } : undefined
         return App.createPagedResults({
