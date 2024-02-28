@@ -27421,10 +27421,10 @@ const BatoToHelper_1 = require("./BatoToHelper");
 const BatoToSettings_1 = require("./BatoToSettings");
 const BATO_DOMAIN = 'https://bato.to';
 exports.BatoToInfo = {
-    version: '3.1.0',
+    version: '3.1.1',
     name: 'BatoTo',
     icon: 'icon.png',
-    author: 'Nicholas',
+    author: 'niclimcy',
     authorWebsite: 'https://github.com/niclimcy',
     description: 'Extension that pulls manga from bato.to',
     contentRating: types_1.ContentRating.MATURE,
@@ -27532,8 +27532,8 @@ class BatoTo {
                 throw new Error('Requested to getViewMoreItems for a section ID which doesn\'t exist');
         }
         const langHomeFilter = await this.stateManager.retrieve('language_home_filter') ?? false;
-        const langs = langHomeFilter ? await this.stateManager.retrieve('languages') : BatoToHelper_1.BTLanguages.getDefault();
-        param += langs ? `&langs=${langs.join(',')}` : '';
+        const langs = await this.stateManager.retrieve('languages') ?? BatoToHelper_1.BTLanguages.getDefault();
+        param += langHomeFilter ? `&langs=${langs.join(',')}` : '';
         const request = App.createRequest({
             url: `${BATO_DOMAIN}/browse`,
             method: 'GET',
@@ -27567,7 +27567,7 @@ class BatoTo {
             });
         }
         const langSearchFilter = await this.stateManager.retrieve('language_search_filter') ?? false;
-        const langs = langSearchFilter ? await this.stateManager.retrieve('languages') : BatoToHelper_1.BTLanguages.getDefault();
+        const langs = await this.stateManager.retrieve('languages') ?? BatoToHelper_1.BTLanguages.getDefault();
         const response = await this.requestManager.schedule(request, 1);
         const $ = this.cheerio.load(response.data);
         const manga = (0, BatoToParser_1.parseSearch)($, langSearchFilter, langs);
@@ -28327,7 +28327,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.isLastPage = exports.parseThumbnailUrl = exports.parseSearch = exports.parseTags = exports.parseViewMore = exports.parseHomeSections = exports.parseChapterDetails = exports.parseChapterList = exports.parseMangaDetails = void 0;
 const types_1 = require("@paperback/types");
 const BatoToHelper_1 = require("./BatoToHelper");
-const CryptoJS = __importStar(require("./external/crypto-js.min.js")); // 4.2.0
+const CryptoJS = __importStar(require("./external/crypto-js.min")); // 4.2.0
 const entities = require("entities");
 const parseMangaDetails = ($, mangaId) => {
     const titles = [];
@@ -28439,8 +28439,9 @@ const parseChapterDetails = ($, mangaId, chapterId) => {
     });
     const script = scriptObj?.children[0]?.data ?? '';
     const batoPass = eval(script.match(/const\s+batoPass\s*=\s*(.*?);/)?.[1] ?? '').toString();
-    const batoWord = (script.match(/const\s+batoWord\s*=\s*"(.*)";/)?.[1] ?? '');
-    const imgList = JSON.parse(script.match(/const\s+imgHttps\s*=\s*(.*?);/)?.[1] ?? '');
+    const batoWord = script.match(/const\s+batoWord\s*=\s*"(.*)";/)?.[1] ?? '';
+    const imgHttps = script.match(/const\s+imgHttps\s*=\s*(.*?);/)?.[1] ?? '';
+    const imgList = JSON.parse(imgHttps);
     const tknList = JSON.parse(CryptoJS.AES.decrypt(batoWord, batoPass).toString(CryptoJS.enc.Utf8));
     const pages = imgList.map((value, index) => `${value}?${tknList[index]}`);
     const chapterDetails = App.createChapterDetails({
@@ -28576,7 +28577,7 @@ const decodeHTMLEntity = (str) => {
     return entities.decodeHTML(str);
 };
 
-},{"./BatoToHelper":257,"./external/crypto-js.min.js":260,"@paperback/types":61,"entities":168}],259:[function(require,module,exports){
+},{"./BatoToHelper":257,"./external/crypto-js.min":260,"@paperback/types":61,"entities":168}],259:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.resetSettings = exports.languageSettings = void 0;
