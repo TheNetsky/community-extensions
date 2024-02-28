@@ -14,7 +14,7 @@ import {
     BTLanguages
 } from './BatoToHelper'
 
-import * as CryptoJS from './external/crypto-js.min.js' // 4.2.0
+import * as CryptoJS from './external/crypto-js.min' // 4.2.0
 import entities = require('entities')
 
 export const parseMangaDetails = ($: CheerioStatic, mangaId: string): SourceManga => {
@@ -136,9 +136,11 @@ export const parseChapterDetails = ($: CheerioStatic, mangaId: string, chapterId
     const script = scriptObj?.children[0]?.data ?? ''
 
     const batoPass = eval(script.match(/const\s+batoPass\s*=\s*(.*?);/)?.[1] ?? '').toString()
-    const batoWord = (script.match(/const\s+batoWord\s*=\s*"(.*)";/)?.[1] ?? '')
-    const imgList = JSON.parse(script.match(/const\s+imgHttps\s*=\s*(.*?);/)?.[1] ?? '')
-    const tknList = JSON.parse(CryptoJS.AES.decrypt(batoWord, batoPass).toString(CryptoJS.enc.Utf8))
+    const batoWord = script.match(/const\s+batoWord\s*=\s*"(.*)";/)?.[1] ?? ''
+    const imgHttps = script.match(/const\s+imgHttps\s*=\s*(.*?);/)?.[1] ?? ''
+
+    const imgList: string[] = JSON.parse(imgHttps)
+    const tknList: string[] = JSON.parse(CryptoJS.AES.decrypt(batoWord, batoPass).toString(CryptoJS.enc.Utf8))
 
     const pages = imgList.map((value: string, index: number) => `${value}?${tknList[index]}`)
 
