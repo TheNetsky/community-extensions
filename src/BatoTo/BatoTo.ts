@@ -45,10 +45,10 @@ import {
 const BATO_DOMAIN = 'https://bato.to'
 
 export const BatoToInfo: SourceInfo = {
-    version: '3.1.0',
+    version: '3.1.1',
     name: 'BatoTo',
     icon: 'icon.png',
-    author: 'Nicholas',
+    author: 'niclimcy',
     authorWebsite: 'https://github.com/niclimcy',
     description: 'Extension that pulls manga from bato.to',
     contentRating: ContentRating.MATURE,
@@ -170,8 +170,8 @@ export class BatoTo implements SearchResultsProviding, MangaProviding, ChapterPr
         }
 
         const langHomeFilter: boolean = await this.stateManager.retrieve('language_home_filter') ?? false
-        const langs: string[] = langHomeFilter ? await this.stateManager.retrieve('languages') : BTLanguages.getDefault()
-        param += langs ? `&langs=${langs.join(',')}` : ''
+        const langs: string[] = await this.stateManager.retrieve('languages') ?? BTLanguages.getDefault()
+        param += langHomeFilter ? `&langs=${langs.join(',')}` : ''
 
         const request = App.createRequest({
             url: `${BATO_DOMAIN}/browse`,
@@ -210,7 +210,7 @@ export class BatoTo implements SearchResultsProviding, MangaProviding, ChapterPr
         }
 
         const langSearchFilter: boolean = await this.stateManager.retrieve('language_search_filter') ?? false
-        const langs: string[] = langSearchFilter ? await this.stateManager.retrieve('languages') : BTLanguages.getDefault()
+        const langs: string[] = await this.stateManager.retrieve('languages') ?? BTLanguages.getDefault()
 
         const response = await this.requestManager.schedule(request, 1)
         const $ = this.cheerio.load(response.data as string)
