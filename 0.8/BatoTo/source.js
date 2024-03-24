@@ -27421,7 +27421,7 @@ const BatoToHelper_1 = require("./BatoToHelper");
 const BatoToSettings_1 = require("./BatoToSettings");
 const BATO_DOMAIN = 'https://bato.to';
 exports.BatoToInfo = {
-    version: '3.1.1',
+    version: '3.1.2',
     name: 'BatoTo',
     icon: 'icon.png',
     author: 'niclimcy',
@@ -28493,7 +28493,7 @@ const parseHomeSections = ($, sectionCallback) => {
         const id = $('a', manga).attr('href')?.replace('/series/', '')?.trim().split('/')[0] ?? '';
         const btcode = $('em', manga).attr('data-lang');
         const lang = btcode ? BatoToHelper_1.BTLanguages.getLangCode(btcode) : '🇬🇧';
-        const subtitle = lang + ' ' + $('.item-volch i', manga).text().trim() ?? lang;
+        const subtitle = lang + ' ' + $('.item-volch a', manga).text().trim() ?? lang;
         if (!id || !title)
             continue;
         latestSection_Array.push(App.createPartialSourceManga({
