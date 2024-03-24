@@ -45,7 +45,7 @@ import {
 const BATO_DOMAIN = 'https://bato.to'
 
 export const BatoToInfo: SourceInfo = {
-    version: '3.1.1',
+    version: '3.1.2',
     name: 'BatoTo',
     icon: 'icon.png',
     author: 'niclimcy',
@@ -201,7 +201,7 @@ export class BatoTo implements SearchResultsProviding, MangaProviding, ChapterPr
                 url: `${BATO_DOMAIN}/search?word=${encodeURI(query.title ?? '')}&page=${page}`,
                 method: 'GET'
             })
-        // Tag Search
+            // Tag Search
         } else {
             request = App.createRequest({
                 url: `${BATO_DOMAIN}/browse?genres=${query?.includedTags?.map((x: Tag) => x.id)[0]}&page=${page}`,

@@ -196,7 +196,7 @@ export const parseHomeSections = ($: CheerioStatic, sectionCallback: (section: H
         const id = $('a', manga).attr('href')?.replace('/series/', '')?.trim().split('/')[0] ?? ''
         const btcode = $('em', manga).attr('data-lang')
         const lang: string = btcode ? BTLanguages.getLangCode(btcode) : '🇬🇧'
-        const subtitle: string = lang + ' ' + $('.item-volch i', manga).text().trim() ?? lang
+        const subtitle: string = lang + ' ' + $('.item-volch a', manga).text().trim() ?? lang
 
         if (!id || !title) continue
         latestSection_Array.push(App.createPartialSourceManga({
