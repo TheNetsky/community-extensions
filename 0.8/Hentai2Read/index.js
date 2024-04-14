@@ -1070,7 +1070,7 @@ const Hentai2ReadHelper_1 = require("./Hentai2ReadHelper");
 const Hentai2ReadTags_1 = require("./Hentai2ReadTags");
 exports.DOMAIN = 'https://hentai2read.com';
 exports.Hentai2ReadInfo = {
-    version: '1.0.0',
+    version: '1.0.1',
     name: 'Hentai2Read',
     icon: 'icon.png',
     author: 'EmZedH',
@@ -1139,31 +1139,31 @@ class Hentai2Read {
     async getHomePageSections(sectionCallback) {
         const sections = [
             App.createHomeSection({
-                id: "staff-pick",
-                title: "Staff Pick",
+                id: 'staff-pick',
+                title: 'Staff Pick',
                 containsMoreItems: false,
                 type: types_1.HomeSectionType.featured
             }),
             App.createHomeSection({
-                id: "most-popular",
+                id: 'most-popular',
                 title: 'Most Popular',
                 containsMoreItems: true,
                 type: types_1.HomeSectionType.singleRowNormal
             }),
             App.createHomeSection({
-                id: "trending",
+                id: 'trending',
                 title: 'Trending',
                 containsMoreItems: true,
                 type: types_1.HomeSectionType.singleRowNormal
             }),
             App.createHomeSection({
-                id: "last-added",
+                id: 'last-added',
                 title: 'Newest',
                 containsMoreItems: true,
                 type: types_1.HomeSectionType.singleRowNormal
             }),
             App.createHomeSection({
-                id: "top-rating",
+                id: 'top-rating',
                 title: 'Top Rating',
                 containsMoreItems: true,
                 type: types_1.HomeSectionType.singleRowNormal
@@ -1171,7 +1171,7 @@ class Hentai2Read {
         ];
         for (const section of sections) {
             let url = exports.DOMAIN;
-            if (section.id != "staff-pick") {
+            if (section.id != 'staff-pick') {
                 url = `${exports.DOMAIN}/hentai-list/all/any/all/` + section.id;
             }
             const request = App.createRequest({
@@ -1206,7 +1206,7 @@ class Hentai2Read {
         }
         const request = App.createRequest({
             url: exports.DOMAIN + param,
-            method: 'GET',
+            method: 'GET'
         });
         const response = await this.requestManager.schedule(request, 1);
         const $ = this.cheerio.load(response.data);
@@ -1217,7 +1217,7 @@ class Hentai2Read {
         let request;
         if (page == 1) {
             request = App.createRequest({
-                url: exports.DOMAIN + "/hentai-list/advanced-search",
+                url: exports.DOMAIN + '/hentai-list/advanced-search',
                 method: 'POST',
                 data: (0, Hentai2ReadHelper_1.getFormBody)(query)
             });
@@ -1225,7 +1225,7 @@ class Hentai2Read {
         else {
             request = App.createRequest({
                 url: Hentai2ReadParser_1.nextSearchPageUrl,
-                method: 'GET',
+                method: 'GET'
             });
         }
         const response = await this.requestManager.schedule(request, 1);
@@ -1238,7 +1238,7 @@ class Hentai2Read {
     async getSearchTags() {
         const request = App.createRequest({
             url: exports.DOMAIN + '/hentai-search',
-            method: 'GET',
+            method: 'GET'
         });
         const response = await this.requestManager.schedule(request, 1);
         const $ = this.cheerio.load(response.data);
@@ -1250,7 +1250,7 @@ class Hentai2Read {
     async populateTags() {
         const request = App.createRequest({
             url: exports.DOMAIN + '/hentai-search',
-            method: 'GET',
+            method: 'GET'
         });
         const response = await this.requestManager.schedule(request, 1);
         const $ = this.cheerio.load(response.data);
@@ -1272,10 +1272,10 @@ const getFormBody = (query) => {
     let formBody = 'cmd_wpm_wgt_mng_sch_sbm=Search' +
         '&txt_wpm_wgt_mng_sch_nme=' +
         '&cmd_wpm_pag_mng_sch_sbm=' +
-        '&txt_wpm_pag_mng_sch_nme=' + (query.title ?? "") +
-        '&txt_wpm_pag_mng_sch_ats=' + (query.parameters?.['artist'] ?? "") +
-        '&txt_wpm_pag_mng_sch_chr=' + (query.parameters?.['character'] ?? "") +
-        '&txt_wpm_pag_mng_sch_rls_yer=' + (query.parameters?.['release-year'] ?? "");
+        '&txt_wpm_pag_mng_sch_nme=' + (query.title ?? '') +
+        '&txt_wpm_pag_mng_sch_ats=' + (query.parameters?.['artist'] ?? '') +
+        '&txt_wpm_pag_mng_sch_chr=' + (query.parameters?.['character'] ?? '') +
+        '&txt_wpm_pag_mng_sch_rls_yer=' + (query.parameters?.['release-year'] ?? '');
     for (const tag of query.includedTags) {
         formBody += '&chk_wpm_pag_mng_sch_mng_tag_inc[]=' + tag.id;
     }
@@ -1324,62 +1324,14 @@ exports.parseDate = parseDate;
 },{"entities":69}],72:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.parseViewMoreItems = exports.parseSearchTags = exports.parseSearchResults = exports.parseSearchFields = exports.parseHomePageSectionMangas = exports.parseMangaDetails = exports.parseChapters = exports.parseChapterDetails = exports.nextSearchPageUrl = void 0;
+exports.parseViewMoreItems = exports.parseSearchTags = exports.parseSearchResults = exports.parseSearchFields = exports.parseHomePageSectionMangas = exports.parseChapterDetails = exports.parseChapters = exports.parseMangaDetails = exports.nextSearchPageUrl = void 0;
 const Hentai2ReadHelper_1 = require("./Hentai2ReadHelper");
 const Hentai2ReadTags_1 = require("./Hentai2ReadTags");
-const Hentai2Read_1 = require("./Hentai2Read");
 exports.nextSearchPageUrl = '';
-const parseChapterDetails = ($, mangaId, chapterId) => {
-    const regex = /'images' : \[(.*?)\]/;
-    let imageUrls = [];
-    const match = regex.exec($.html());
-    if (match && match[1]) {
-        const imagesList = match[1].replace(/\\/g, '');
-        imageUrls = JSON.parse('[' + imagesList + ']');
-        imageUrls = imageUrls.map((imageUrl) => "https://static.hentaicdn.com/hentai/" + imageUrl);
-    }
-    return App.createChapterDetails({
-        id: chapterId,
-        mangaId: mangaId,
-        pages: imageUrls
-    });
-};
-exports.parseChapterDetails = parseChapterDetails;
-const parseChapters = ($, mangaId) => {
-    const chapters = [];
-    for (const chapter of $('ul.nav-chapters > li > div.media > a').toArray()) {
-        const chapterId = $(chapter).attr('href')?.replace('https://hentai2read.com/', '')?.trim() ?? "";
-        const titleRaw = $(chapter).text().trim();
-        const title = titleRaw.substring(0, titleRaw.indexOf('uploaded')).trim();
-        const language = $('div.col-xs-12.col-md-8 > div.block-content.row.bg-white.bc-xs > div.col-xs-12.col-sm-7 > ul > li:nth-child(14) > a').text().trim();
-        let langCode = '';
-        if (language == "English") {
-            langCode = "🇬🇧";
-        }
-        const parts = chapterId.split("/");
-        const chapNum = Number(parts[parts.length - 2]);
-        const regex = /about (.*?) ago/g;
-        const match = regex.exec(titleRaw.substring(titleRaw.indexOf('uploaded')).trim());
-        let dateString = "";
-        if (match && match.length > 1) {
-            dateString = match[1]?.trim() ?? "";
-        }
-        const date = (0, Hentai2ReadHelper_1.parseDate)(dateString);
-        chapters.push(App.createChapter({
-            id: chapterId,
-            chapNum: chapNum,
-            name: (0, Hentai2ReadHelper_1.decodeHTMLEntity)(title),
-            time: date,
-            langCode: langCode
-        }));
-    }
-    return chapters;
-};
-exports.parseChapters = parseChapters;
 const parseMangaDetails = async ($, mangaId) => {
     const mangaDetails = $('ul.list-simple-mini');
     const titles = [(0, Hentai2ReadHelper_1.decodeHTMLEntity)($('.block-header.bg-black.bh-xs > h3.block-title > a').first().text().trim())];
-    const image = $('a#js-linkNext > img').attr('src') ?? '';
+    const image = $('#js-linkNext > picture > img').attr('src') ?? '';
     const status = $('li:contains(Status) > a', mangaDetails).text().trim();
     const author = $('li:contains(Author) > a', mangaDetails).text().trim();
     const artist = $('li:contains(Artist) > a', mangaDetails).text().trim();
@@ -1407,18 +1359,65 @@ const parseMangaDetails = async ($, mangaId) => {
     });
 };
 exports.parseMangaDetails = parseMangaDetails;
+const parseChapters = ($, mangaId) => {
+    const chapters = [];
+    for (const chapter of $('ul.nav-chapters > li > div.media > a').toArray()) {
+        const chapterId = $(chapter).attr('href')?.replace('https://hentai2read.com/', '')?.trim() ?? '';
+        const titleRaw = $(chapter).text().trim();
+        const title = titleRaw.substring(0, titleRaw.indexOf('uploaded')).trim();
+        const language = $('div.col-xs-12.col-md-8 > div.block-content.row.bg-white.bc-xs > div.col-xs-12.col-sm-7 > ul > li:nth-child(14) > a').text().trim();
+        let langCode = '';
+        if (language == 'English') {
+            langCode = '🇬🇧';
+        }
+        const parts = chapterId.split('/');
+        const chapNum = Number(parts[parts.length - 2]);
+        const regex = /about (.*?) ago/g;
+        const match = regex.exec(titleRaw.substring(titleRaw.indexOf('uploaded')).trim());
+        let dateString = '';
+        if (match && match.length > 1) {
+            dateString = match[1]?.trim() ?? '';
+        }
+        const date = (0, Hentai2ReadHelper_1.parseDate)(dateString);
+        chapters.push(App.createChapter({
+            id: chapterId,
+            chapNum: chapNum,
+            name: (0, Hentai2ReadHelper_1.decodeHTMLEntity)(title),
+            time: date,
+            langCode: langCode
+        }));
+    }
+    return chapters;
+};
+exports.parseChapters = parseChapters;
+const parseChapterDetails = ($, mangaId, chapterId) => {
+    const regex = /'images' : \[(.*?)\]/;
+    let imageUrls = [];
+    const match = regex.exec($.html());
+    if (match && match[1]) {
+        const imagesList = match[1].replace(/\\/g, '');
+        imageUrls = JSON.parse('[' + imagesList + ']');
+        imageUrls = imageUrls.map((imageUrl) => 'https://static.hentaicdn.com/hentai/' + imageUrl);
+    }
+    return App.createChapterDetails({
+        id: chapterId,
+        mangaId: mangaId,
+        pages: imageUrls
+    });
+};
+exports.parseChapterDetails = parseChapterDetails;
 const parseHomePageSectionMangas = ($) => {
     const section_Array = [];
-    for (const manga of $(".col-xs-6.col-sm-4.col-md-3.col-xl-2", ".row.book-grid").toArray()) {
-        const image = $("div > div > picture > source", manga).first().attr('srcset') ?? '';
-        const title = $("div > div > a.title > span", manga).text().trim() ?? '';
-        const id = $("div > div > a.title", manga).attr('href')?.replace('https://hentai2read.com/', '')?.replace('/', '')?.trim() ?? "";
+    for (const manga of $('.col-xs-6.col-sm-4.col-md-3.col-xl-2', '.row.book-grid').toArray()) {
+        const image = $('div > div > picture > img', manga).attr('src') ?? '';
+        const title = $('div > div > a.title > span', manga).text().trim() ?? '';
+        const id = $('div > div > a.title', manga).attr('href')?.replace('https://hentai2read.com/', '')?.replace('/', '')?.trim() ?? '';
         if (!id || !title)
             continue;
         section_Array.push(App.createPartialSourceManga({
-            image: Hentai2Read_1.DOMAIN + image,
+            image: image,
             title: (0, Hentai2ReadHelper_1.decodeHTMLEntity)(title),
-            mangaId: id,
+            mangaId: id
         }));
     }
     return section_Array;
@@ -1436,19 +1435,19 @@ exports.parseSearchFields = parseSearchFields;
 const parseSearchResults = ($, metadata) => {
     const page = metadata?.page ?? 1;
     const mangas = [];
-    for (const manga of $(".col-xs-6.col-sm-4.col-md-3.col-xl-2", ".row.book-grid").toArray()) {
-        const image = $("div > div > picture > source", manga).first().attr('srcset') ?? '';
-        const title = $("div > div > a.title > span", manga).text().trim() ?? '';
-        const id = $("div > div > a.title", manga).attr('href')?.replace('https://hentai2read.com/', '')?.replace('/', '')?.trim() ?? "";
+    for (const manga of $('.col-xs-6.col-sm-4.col-md-3.col-xl-2', '.row.book-grid').toArray()) {
+        const image = $('div > div > picture > img', manga).attr('src') ?? '';
+        const title = $('div > div > a.title > span', manga).text().trim() ?? '';
+        const id = $('div > div > a.title', manga).attr('href')?.replace('https://hentai2read.com/', '')?.replace('/', '')?.trim() ?? '';
         if (!id || !title)
             continue;
         mangas.push(App.createPartialSourceManga({
-            image: Hentai2Read_1.DOMAIN + image,
+            image: image,
             title: (0, Hentai2ReadHelper_1.decodeHTMLEntity)(title),
-            mangaId: id,
+            mangaId: id
         }));
     }
-    exports.nextSearchPageUrl = $('#js-linkNext').attr('href') ?? "";
+    exports.nextSearchPageUrl = $('#js-linkNext').attr('href') ?? '';
     metadata = !(0, Hentai2ReadHelper_1.isLastPage)($) ? { page: page + 1 } : undefined;
     return App.createPagedResults({
         results: mangas,
@@ -1459,12 +1458,12 @@ exports.parseSearchResults = parseSearchResults;
 const parseSearchTags = async ($) => {
     await (0, Hentai2ReadTags_1.populateTags)($);
     return [App.createTagSection({
-            id: "tab-category",
-            label: "CATEGORY",
+            id: 'tab-category',
+            label: 'CATEGORY',
             tags: Hentai2ReadTags_1.categories
         }), App.createTagSection({
-            id: "tab-tag",
-            label: "TAGS",
+            id: 'tab-tag',
+            label: 'TAGS',
             tags: Hentai2ReadTags_1.tags
         })];
 };
@@ -1472,16 +1471,16 @@ exports.parseSearchTags = parseSearchTags;
 const parseViewMoreItems = ($, metadata) => {
     const page = metadata?.page ?? 1;
     const mangas = [];
-    for (const manga of $(".col-xs-6.col-sm-4.col-md-3.col-xl-2", ".row.book-grid").toArray()) {
-        const image = $("div > div > picture > source", manga).first().attr('srcset') ?? '';
-        const title = $("div > div > a.title > span", manga).text().trim() ?? '';
-        const id = $("div > div > a.title", manga).attr('href')?.replace('https://hentai2read.com/', '')?.replace('/', '')?.trim() ?? "";
+    for (const manga of $('.col-xs-6.col-sm-4.col-md-3.col-xl-2', '.row.book-grid').toArray()) {
+        const image = $('div > div > picture > img', manga).attr('src') ?? '';
+        const title = $('div > div > a.title > span', manga).text().trim() ?? '';
+        const id = $('div > div > a.title', manga).attr('href')?.replace('https://hentai2read.com/', '')?.replace('/', '')?.trim() ?? '';
         if (!id || !title)
             continue;
         mangas.push(App.createPartialSourceManga({
-            image: Hentai2Read_1.DOMAIN + image,
+            image: image,
             title: (0, Hentai2ReadHelper_1.decodeHTMLEntity)(title),
-            mangaId: id,
+            mangaId: id
         }));
     }
     metadata = !(0, Hentai2ReadHelper_1.isLastPage)($) ? { page: page + 1 } : undefined;
@@ -1492,7 +1491,7 @@ const parseViewMoreItems = ($, metadata) => {
 };
 exports.parseViewMoreItems = parseViewMoreItems;
 
-},{"./Hentai2Read":70,"./Hentai2ReadHelper":71,"./Hentai2ReadTags":73}],73:[function(require,module,exports){
+},{"./Hentai2ReadHelper":71,"./Hentai2ReadTags":73}],73:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.populateTags = exports.getTagId = exports.tags = exports.categories = void 0;
@@ -1519,7 +1518,7 @@ const getTags = async ($, tagSelector) => {
         const label = $('a > div', tagElement).text().trim();
         const id = $('input', tagElement).first().attr('value')?.trim();
         tags.push(App.createTag({
-            id: id ?? "",
+            id: id ?? '',
             label: (0, Hentai2ReadHelper_1.decodeHTMLEntity)(label)
         }));
     }
