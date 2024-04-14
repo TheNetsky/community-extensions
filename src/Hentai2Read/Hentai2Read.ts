@@ -20,15 +20,25 @@ import {
     TagSection
 } from '@paperback/types'
 
-import { nextSearchPageUrl, parseChapterDetails, parseChapters, parseHomePageSectionMangas, parseMangaDetails, parseSearchFields, parseSearchResults, parseSearchTags, parseViewMoreItems } from './Hentai2ReadParser';
-import { getFormBody } from './Hentai2ReadHelper';
-import { populateTags } from './Hentai2ReadTags';
+import {
+    nextSearchPageUrl,
+    parseChapterDetails,
+    parseChapters,
+    parseHomePageSectionMangas,
+    parseMangaDetails,
+    parseSearchFields,
+    parseSearchResults,
+    parseSearchTags,
+    parseViewMoreItems
+} from './Hentai2ReadParser'
+import { getFormBody } from './Hentai2ReadHelper'
+import { populateTags } from './Hentai2ReadTags'
 
 
 export const DOMAIN = 'https://hentai2read.com'
 
 export const Hentai2ReadInfo: SourceInfo = {
-    version: '1.0.0',
+    version: '1.0.1',
     name: 'Hentai2Read',
     icon: 'icon.png',
     author: 'EmZedH',
@@ -60,7 +70,7 @@ export class Hentai2Read implements SearchResultsProviding, MangaProviding, Chap
                         'referer': `${DOMAIN}/`
                     }
                 }
-                
+
                 return request
             },
             interceptResponse: async (response: Response): Promise<Response> => {
@@ -79,7 +89,7 @@ export class Hentai2Read implements SearchResultsProviding, MangaProviding, Chap
 
         const response = await this.requestManager.schedule(request, 1)
         const $ = this.cheerio.load(response.data as string)
-        
+
         return parseMangaDetails($, mangaId)
     }
 
@@ -89,9 +99,9 @@ export class Hentai2Read implements SearchResultsProviding, MangaProviding, Chap
             url: `${DOMAIN}/${mangaId}`,
             method: 'GET'
         })
-        
+
         const response = await this.requestManager.schedule(request, 1)
-        
+
         const $ = this.cheerio.load(response.data as string)
         return parseChapters($, mangaId)
     }
@@ -112,41 +122,41 @@ export class Hentai2Read implements SearchResultsProviding, MangaProviding, Chap
 
         const sections: HomeSection[] = [
             App.createHomeSection({
-                id: "staff-pick",
-                title: "Staff Pick",
+                id: 'staff-pick',
+                title: 'Staff Pick',
                 containsMoreItems: false,
                 type: HomeSectionType.featured
             }),
             App.createHomeSection({
-                id: "most-popular",
+                id: 'most-popular',
                 title: 'Most Popular',
                 containsMoreItems: true,
                 type: HomeSectionType.singleRowNormal
             }),
             App.createHomeSection({
-                id: "trending",
+                id: 'trending',
                 title: 'Trending',
                 containsMoreItems: true,
                 type: HomeSectionType.singleRowNormal
             }),
             App.createHomeSection({
-                id: "last-added",
+                id: 'last-added',
                 title: 'Newest',
                 containsMoreItems: true,
                 type: HomeSectionType.singleRowNormal
             }),
             App.createHomeSection({
-                id: "top-rating",
+                id: 'top-rating',
                 title: 'Top Rating',
                 containsMoreItems: true,
                 type: HomeSectionType.singleRowNormal
             })
         ]
-        
-        for(const section of sections){
+
+        for (const section of sections) {
             let url = DOMAIN
-            if(section.id != "staff-pick"){
-                url = `${DOMAIN}/hentai-list/all/any/all/`+section.id
+            if (section.id != 'staff-pick') {
+                url = `${DOMAIN}/hentai-list/all/any/all/` + section.id
             }
             const request = App.createRequest({
                 url: url,
@@ -156,7 +166,7 @@ export class Hentai2Read implements SearchResultsProviding, MangaProviding, Chap
             const response = await this.requestManager.schedule(request, 1)
 
             const $ = this.cheerio.load(response.data as string)
-            
+
             section.items = parseHomePageSectionMangas($)
             sectionCallback(section)
             this.populateTags()
@@ -184,8 +194,8 @@ export class Hentai2Read implements SearchResultsProviding, MangaProviding, Chap
                 throw new Error('Requested to getViewMoreItems for a section ID which doesn\'t exist')
         }
         const request = App.createRequest({
-            url: DOMAIN+param,
-            method: 'GET',
+            url: DOMAIN + param,
+            method: 'GET'
         })
 
         const response = await this.requestManager.schedule(request, 1)
@@ -197,17 +207,17 @@ export class Hentai2Read implements SearchResultsProviding, MangaProviding, Chap
     async getSearchResults(query: SearchRequest, metadata: any): Promise<PagedResults> {
         const page: number = metadata?.page ?? 1
         let request: Request
-        if(page == 1){
+        if (page == 1) {
             request = App.createRequest({
-                url: DOMAIN+"/hentai-list/advanced-search",
+                url: DOMAIN + '/hentai-list/advanced-search',
                 method: 'POST',
                 data: getFormBody(query)
             })
         }
-        else{
+        else {
             request = App.createRequest({
                 url: nextSearchPageUrl,
-                method: 'GET',
+                method: 'GET'
             })
         }
 
@@ -225,8 +235,8 @@ export class Hentai2Read implements SearchResultsProviding, MangaProviding, Chap
     async getSearchTags(): Promise<TagSection[]> {
 
         const request = App.createRequest({
-            url: DOMAIN+'/hentai-search',
-            method: 'GET',
+            url: DOMAIN + '/hentai-search',
+            method: 'GET'
 
         })
 
@@ -236,16 +246,16 @@ export class Hentai2Read implements SearchResultsProviding, MangaProviding, Chap
 
         return parseSearchTags($)
     }
-    
+
     async supportsTagExclusion(): Promise<boolean> {
         return true
     }
 
-    private async populateTags(){
+    private async populateTags() {
 
         const request = App.createRequest({
-            url: DOMAIN+'/hentai-search',
-            method: 'GET',
+            url: DOMAIN + '/hentai-search',
+            method: 'GET'
 
         })
         const response = await this.requestManager.schedule(request, 1)

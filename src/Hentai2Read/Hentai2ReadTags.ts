@@ -1,5 +1,5 @@
-import { Tag } from "@paperback/types"
-import { decodeHTMLEntity } from "./Hentai2ReadHelper"
+import { Tag } from '@paperback/types'
+import { decodeHTMLEntity } from './Hentai2ReadHelper'
 
 export let categories: Tag[] = []
 export let tags: Tag[] = []
@@ -10,12 +10,12 @@ export const getTagId = async ($: CheerioStatic, label: string): Promise<string 
 
     await populateTags($)
 
-    const category = categories.find( tag => tag.label === label)
-    if(category){
+    const category = categories.find(tag => tag.label === label)
+    if (category) {
         return category.id
     }
-    const tag = tags.find( tagVar => tagVar.label === label)
-    if(tag){
+    const tag = tags.find(tagVar => tagVar.label === label)
+    if (tag) {
         return tag.id
     }
     return null
@@ -23,14 +23,14 @@ export const getTagId = async ($: CheerioStatic, label: string): Promise<string 
 
 const getTags = async ($: CheerioStatic, tagSelector: string): Promise<Tag[]> => {
     const tags: Tag[] = []
-    for(const tagElement of $('div.col-xs-4.col-sm-3.tag-blocks', tagSelector).toArray()){
+    for (const tagElement of $('div.col-xs-4.col-sm-3.tag-blocks', tagSelector).toArray()) {
         const label = $('a > div', tagElement).text().trim()
         const id = $('input', tagElement).first().attr('value')?.trim()
 
         tags.push(
             App.createTag(
                 {
-                    id: id ?? "",
+                    id: id ?? '',
                     label: decodeHTMLEntity(label)
                 }
             )
@@ -40,7 +40,7 @@ const getTags = async ($: CheerioStatic, tagSelector: string): Promise<Tag[]> =>
 }
 
 export const populateTags = async ($: CheerioStatic) => {
-    if(categories.length!=0 && tags.length!=0){
+    if (categories.length != 0 && tags.length != 0) {
         return
     }
     categories = await getTags($, '#tab-category')
