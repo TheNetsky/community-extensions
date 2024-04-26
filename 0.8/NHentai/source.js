@@ -468,7 +468,7 @@ const NHentaiSettings_1 = require("./NHentaiSettings");
 const tags_json_1 = require("./tags.json");
 const NHENTAI_URL = 'https://nhentai.net';
 exports.NHentaiInfo = {
-    version: '4.0.6',
+    version: '4.0.7',
     name: 'nhentai',
     icon: 'icon.png',
     author: 'NotMarek & Netsky',
@@ -643,18 +643,6 @@ class NHentai {
                     containsMoreItems: true,
                     type: types_1.HomeSectionType.singleRowNormal
                 })
-            },
-            {
-                request: App.createRequest({
-                    url: `${NHENTAI_URL}/api/galleries/search?query=${await this.generateQuery()}&sort=popular`,
-                    method: 'GET'
-                }),
-                sectionID: App.createHomeSection({
-                    id: 'popular',
-                    title: 'Popular All-Time',
-                    containsMoreItems: true,
-                    type: types_1.HomeSectionType.singleRowNormal
-                })
             }
         ];
         const promises = [];
@@ -664,6 +652,9 @@ class NHentai {
                 .then(response => {
                 this.CloudFlareError(response.status);
                 const jsonData = this.parseJson(response);
+                if ((0, NHentaiHelper_1.hasNoResults)(jsonData)) {
+                    return;
+                }
                 section.sectionID.items = (0, NHentaiParser_1.parseSearch)(jsonData);
                 sectionCallback(section.sectionID);
             }));
@@ -739,7 +730,7 @@ exports.NHentai = NHentai;
 },{"./NHentaiHelper":63,"./NHentaiParser":64,"./NHentaiSettings":65,"./tags.json":66,"@paperback/types":61}],63:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.NHSortOrders = exports.NHLanguages = void 0;
+exports.hasNoResults = exports.NHSortOrders = exports.NHLanguages = void 0;
 class NHLanguagesClass {
     constructor() {
         this.Languages = [
@@ -839,6 +830,15 @@ class NHSortOrderClass {
     }
 }
 exports.NHSortOrders = new NHSortOrderClass();
+function hasNoResults(data) {
+    console.log(data);
+    if (data.error) {
+        console.error(data.error);
+        return true;
+    }
+    return false;
+}
+exports.hasNoResults = hasNoResults;
 
 },{}],64:[function(require,module,exports){
 "use strict";
