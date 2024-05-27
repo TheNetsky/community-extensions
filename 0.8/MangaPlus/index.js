@@ -468,7 +468,7 @@ const BASE_URL = 'https://mangaplus.shueisha.co.jp';
 const API_URL = 'https://jumpg-webapi.tokyo-cdn.com/api';
 const langCode = MangaPlusHelper_1.Language.ENGLISH;
 exports.MangaPlusInfo = {
-    version: '2.0.1',
+    version: '2.0.2',
     name: 'MangaPlus',
     icon: 'icon.png',
     author: 'Rinto-kun',
@@ -527,7 +527,7 @@ class MangaPlus {
     getMangaShareUrl(mangaId) { return `${BASE_URL}/titles/${mangaId}`; }
     async getMangaDetails(mangaId) {
         const request = App.createRequest({
-            url: `${API_URL}/title_detail?title_id=${mangaId}&format=json`,
+            url: `${API_URL}/title_detailV3?title_id=${mangaId}&format=json`,
             method: 'GET'
         });
         const response = await this.requestManager.schedule(request, 1);
@@ -536,7 +536,7 @@ class MangaPlus {
     }
     async getChapters(mangaId) {
         const request = App.createRequest({
-            url: `${API_URL}/title_detail?title_id=${mangaId}&format=json`,
+            url: `${API_URL}/title_detailV3?title_id=${mangaId}&format=json`,
             method: 'GET'
         });
         const response = await this.requestManager.schedule(request, 1);
@@ -628,7 +628,7 @@ class MangaPlus {
     async getLatestUpdates() {
         function latestUpdatesRequest() {
             return App.createRequest({
-                url: `${API_URL}/web/web_homeV3?lang=eng&format=json`,
+                url: `${API_URL}/web/web_homeV4?lang=eng&format=json`,
                 method: 'GET'
             });
         }
@@ -639,7 +639,7 @@ class MangaPlus {
             throw new Error(result.error?.langPopup(langCode)?.body ?? 'Unknown error');
         }
         const languages = await (0, MangaPlusSettings_1.getLanguages)(this.stateManager);
-        const results = result.success.webHomeViewV3?.groups
+        const results = result.success.webHomeViewV4?.groups
             .flatMap(ex => ex.titleGroups)
             .flatMap(ex => ex.titles)
             .map(title => title.title)
@@ -803,6 +803,7 @@ class TitleDetailView {
         this.nextTimeStamp = 0;
         this.viewingPeriodDescription = '';
         this.nonAppearanceInfo = '';
+        this.chapterListGroup = [];
         this.firstChapterList = [];
         this.lastChapterList = [];
         this.isSimulReleased = false;
@@ -855,8 +856,8 @@ class TitleDetailView {
         obj.nextTimeStamp = json.nextTimeStamp;
         obj.viewingPeriodDescription = json.viewingPeriodDescription;
         obj.nonAppearanceInfo = json.nonAppearanceInfo;
-        obj.firstChapterList = json.firstChapterList?.map(chapter => Object.assign(new Chapter(1, 1, '', 1, 1), chapter));
-        obj.lastChapterList = json.lastChapterList?.map(chapter => Object.assign(new Chapter(1, 1, '', 1, 1), chapter));
+        obj.firstChapterList = json.chapterListGroup?.flatMap(a => a.firstChapterList ?? []).map(chapter => Object.assign(new Chapter(1, 1, '', 1, 1), chapter));
+        obj.lastChapterList = json.chapterListGroup?.flatMap(a => a.lastChapterList ?? []).map(chapter => Object.assign(new Chapter(1, 1, '', 1, 1), chapter));
         return obj;
     }
     toSourceManga() {
