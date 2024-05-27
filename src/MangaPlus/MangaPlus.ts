@@ -37,7 +37,7 @@ const API_URL = 'https://jumpg-webapi.tokyo-cdn.com/api'
 const langCode = Language.ENGLISH
 
 export const MangaPlusInfo: SourceInfo = {
-    version: '2.0.1',
+    version: '2.0.2',
     name: 'MangaPlus',
     icon: 'icon.png',
     author: 'Rinto-kun',
@@ -110,7 +110,7 @@ export class MangaPlus implements SearchResultsProviding, MangaProviding, Chapte
 
     async getMangaDetails(mangaId: string): Promise<SourceManga> {
         const request = App.createRequest({
-            url: `${API_URL}/title_detail?title_id=${mangaId}&format=json`,
+            url: `${API_URL}/title_detailV3?title_id=${mangaId}&format=json`,
             method: 'GET'
         })
 
@@ -122,7 +122,7 @@ export class MangaPlus implements SearchResultsProviding, MangaProviding, Chapte
 
     async getChapters(mangaId: string): Promise<Chapter[]> {
         const request = App.createRequest({
-            url: `${API_URL}/title_detail?title_id=${mangaId}&format=json`,
+            url: `${API_URL}/title_detailV3?title_id=${mangaId}&format=json`,
             method: 'GET'
         })
 
@@ -242,7 +242,7 @@ export class MangaPlus implements SearchResultsProviding, MangaProviding, Chapte
 
         function latestUpdatesRequest() {
             return App.createRequest({
-                url: `${API_URL}/web/web_homeV3?lang=eng&format=json`,
+                url: `${API_URL}/web/web_homeV4?lang=eng&format=json`,
                 method: 'GET'
             })
         }
@@ -258,7 +258,7 @@ export class MangaPlus implements SearchResultsProviding, MangaProviding, Chapte
 
         const languages = await getLanguages(this.stateManager)
 
-        const results = result.success.webHomeViewV3?.groups
+        const results = result.success.webHomeViewV4?.groups
             .flatMap(ex => ex.titleGroups)
             .flatMap(ex => ex.titles)
             .map(title => title.title)
