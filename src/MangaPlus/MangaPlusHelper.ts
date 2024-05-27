@@ -12,7 +12,7 @@ interface SuccessResult {
     titleDetailView?: TitleDetailView;
     mangaViewer?: MangaViewer;
     allTitlesViewV2?: AllTitlesViewV2;
-    webHomeViewV3?: WebHomeViewV3;
+    webHomeViewV4?: WebHomeViewV4;
     featuredTitlesView?: {
         contents: [
             {
@@ -38,7 +38,7 @@ interface AllTitlesGroup {
     titles: Title[];
 }
 
-interface WebHomeViewV3 {
+interface WebHomeViewV4 {
     groups: UpdatedTitleV2Group[];
 }
 
@@ -115,6 +115,10 @@ export class TitleDetailView {
     nextTimeStamp = 0;
     viewingPeriodDescription = '';
     nonAppearanceInfo = '';
+    chapterListGroup: {
+        firstChapterList: Chapter[] | undefined;
+        lastChapterList: Chapter[] | undefined;
+    }[] = [];
     firstChapterList: Chapter[] = [];
     lastChapterList: Chapter[] = [];
     isSimulReleased = false;
@@ -179,8 +183,8 @@ export class TitleDetailView {
         obj.nextTimeStamp = json.nextTimeStamp
         obj.viewingPeriodDescription = json.viewingPeriodDescription
         obj.nonAppearanceInfo = json.nonAppearanceInfo
-        obj.firstChapterList = json.firstChapterList?.map(chapter => Object.assign(new Chapter(1, 1, '', 1, 1), chapter))
-        obj.lastChapterList = json.lastChapterList?.map(chapter => Object.assign(new Chapter(1, 1, '', 1, 1), chapter))
+        obj.firstChapterList = json.chapterListGroup?.flatMap(a => a.firstChapterList ?? []).map(chapter => Object.assign(new Chapter(1, 1, '', 1, 1), chapter))
+        obj.lastChapterList = json.chapterListGroup?.flatMap(a => a.lastChapterList ?? []).map(chapter => Object.assign(new Chapter(1, 1, '', 1, 1), chapter))
 
         return obj
     }
