@@ -118,3 +118,13 @@ class NHSortOrderClass {
 }
 
 export const NHSortOrders = new NHSortOrderClass()
+
+export function hasNoResults(data: any): boolean {
+    console.log(data)
+    if (data.error) {
+        console.error(data.error)
+        return true
+    }
+
+    return false
+}

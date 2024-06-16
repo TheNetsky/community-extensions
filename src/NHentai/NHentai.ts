@@ -23,7 +23,7 @@ import {
     TagSection
 } from '@paperback/types'
 
-import { NHSortOrders } from './NHentaiHelper'
+import { hasNoResults, NHSortOrders } from './NHentaiHelper'
 
 import {
     parseMangaDetails,
@@ -43,7 +43,7 @@ import { popularTags } from './tags.json'
 const NHENTAI_URL = 'https://nhentai.net'
 
 export const NHentaiInfo: SourceInfo = {
-    version: '4.0.6',
+    version: '4.0.7',
     name: 'nhentai',
     icon: 'icon.png',
     author: 'NotMarek & Netsky',
@@ -236,20 +236,7 @@ export class NHentai implements SearchResultsProviding, MangaProviding, ChapterP
                     containsMoreItems: true,
                     type: HomeSectionType.singleRowNormal
                 })
-            },
-            {
-                request: App.createRequest({
-                    url: `${NHENTAI_URL}/api/galleries/search?query=${await this.generateQuery()}&sort=popular`,
-                    method: 'GET'
-                }),
-                sectionID: App.createHomeSection({
-                    id: 'popular',
-                    title: 'Popular All-Time',
-                    containsMoreItems: true,
-                    type: HomeSectionType.singleRowNormal
-                })
             }
-
         ]
 
         const promises: Promise<void>[] = []
@@ -261,7 +248,11 @@ export class NHentai implements SearchResultsProviding, MangaProviding, ChapterP
                     .then(response => {
                         this.CloudFlareError(response.status)
                         const jsonData = this.parseJson(response)
+                        if (hasNoResults(jsonData)) {
+                            return
+                        }
                         section.sectionID.items = parseSearch(jsonData)
+
                         sectionCallback(section.sectionID)
                     })
             )
