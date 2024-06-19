@@ -13,7 +13,7 @@ interface SuccessResult {
     mangaViewer?: MangaViewer;
     allTitlesViewV2?: AllTitlesViewV2;
     webHomeViewV4?: WebHomeViewV4;
-    featuredTitlesView?: {
+    featuredTitlesViewV2?: {
         contents: [
             {
                 titleList: {
@@ -185,7 +185,7 @@ export class TitleDetailView {
         obj.nonAppearanceInfo = json.nonAppearanceInfo
         obj.firstChapterList = json.chapterListGroup?.flatMap(a => a.firstChapterList ?? []).map(chapter => Object.assign(new Chapter(1, 1, '', 1, 1), chapter))
         obj.lastChapterList = json.chapterListGroup?.flatMap(a => a.lastChapterList ?? []).map(chapter => Object.assign(new Chapter(1, 1, '', 1, 1), chapter))
-
+        
         return obj
     }
 
@@ -194,7 +194,7 @@ export class TitleDetailView {
         return App.createSourceManga({
             id: this.title?.titleId.toString() ?? '',
             mangaInfo: App.createMangaInfo({
-                image: this.title?.portraitImageUrl ?? '',
+                image: 'imageMangaId=' + this.title?.titleId,
                 titles: [this.title?.name ?? ''],
                 author: authors ? authors[0]?.trimEnd() : this.title?.author ?? '',
                 artist: authors ? authors[1]?.trimStart() : this.title?.author ?? '',
