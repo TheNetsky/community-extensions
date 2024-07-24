@@ -144,8 +144,7 @@ export class AsuraScansParser {
 
         const matches = data.matchAll(/(https:\/\/gg\.asuracomic\.net\/storage\/comics\/[^"\\]+)/gi)
         for (const match of Array.from(matches)) {
-
-            const url = match[1] ?? ''
+            const url = (match[1] ?? '').replace(' ', '%20')
             pages.add(url)
         }
 
