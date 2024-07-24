@@ -25,7 +25,8 @@ export class AsuraScansParser {
             throw new Error(`Failed to parse comic object for manga ${mangaId}`) // If null, throw error, else parse data to json.
         }
 
-        let comicObj = JSON.parse(obj)
+        const $ = source.cheerio.load(data)
+        const comicObj = JSON.parse(obj)
 
         const titles: string[] = []
         titles.push(comicObj.comic.name.trim())
@@ -34,10 +35,7 @@ export class AsuraScansParser {
         const artist = comicObj.comic.artist?.trim()
         const image = comicObj.comic.thumb
         const covers = [comicObj.comic.cover]
-        let description = comicObj.comic.summary.trim()
-        if (description != '') {
-            description = this.decodeHTMLEntity(source.cheerio.load(description).text().replace(/\\r\\n/gm, '\n'))
-        }
+        const description = this.decodeHTMLEntity($('span.font-medium').text().trim().replace(/\\r\\n/gm, '\n'))
         const rating = comicObj.comic.rating
 
         const rawStatus = comicObj.comic.status.name.trim()
