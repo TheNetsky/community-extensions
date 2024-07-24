@@ -3918,7 +3918,7 @@ const simpleUrl = require('simple-url');
 const ASURASCANS_DOMAIN = 'https://asuracomic.net';
 const ASURASCANS_API_DOMAIN = 'https://gg.asuracomic.net';
 exports.AsuraScansInfo = {
-    version: '4.0.4',
+    version: '4.0.5',
     name: 'AsuraScans',
     description: 'Extension that pulls manga from AsuraScans',
     author: 'Seyden',
@@ -4399,7 +4399,7 @@ class AsuraScansParser {
         const covers = [comicObj.comic.cover];
         let description = comicObj.comic.summary.trim();
         if (description != '') {
-            description = source.cheerio.load(description).text();
+            description = this.decodeHTMLEntity(source.cheerio.load(description).text().replace(/\\r\\n/gm, '\n'));
         }
         const rating = comicObj.comic.rating;
         const rawStatus = comicObj.comic.status.name.trim();
