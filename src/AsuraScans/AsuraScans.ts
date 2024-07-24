@@ -49,7 +49,7 @@ const ASURASCANS_DOMAIN = 'https://asuracomic.net'
 const ASURASCANS_API_DOMAIN = 'https://gg.asuracomic.net'
 
 export const AsuraScansInfo: SourceInfo = {
-    version: '4.0.5',
+    version: '4.0.6',
     name: 'AsuraScans',
     description: 'Extension that pulls manga from AsuraScans',
     author: 'Seyden',
@@ -92,7 +92,7 @@ export class AsuraScans implements ChapterProviding, HomePageSectionsProviding, 
                             id: 'domain_url',
                             label: 'Domain',
                             value: App.createDUIBinding({
-                                get: async () => await this.getAndSetBaseUrl(),
+                                get: async () => await this.getBaseUrl(),
                                 set: async (newValue) => await stateManager.store('Domain', newValue)
                             })
                         })
@@ -110,7 +110,7 @@ export class AsuraScans implements ChapterProviding, HomePageSectionsProviding, 
         requestTimeout: 30000,
         interceptor: {
             interceptRequest: async (request: Request): Promise<Request> => {
-                const url: string = await this.getAndSetBaseUrl()
+                const url: string = await this.getBaseUrl()
                 request.headers = {
                     ...(request.headers ?? {}), ...{
                         'user-agent': await this.requestManager.getDefaultUserAgent(),
@@ -151,12 +151,11 @@ export class AsuraScans implements ChapterProviding, HomePageSectionsProviding, 
     /**
      * The URL of the website. Eg. https://mangadark.com without a trailing slash
      */
-    finalUrl: string = ''
     baseUrl: string = ASURASCANS_DOMAIN
-    async getAndSetBaseUrl(): Promise<string> {
-        let url: string = await this.stateManager.retrieve('Domain') ?? this.baseUrl
-        this.finalUrl = url.replace(/\/*$/, '')
-        return url
+    async getBaseUrl(): Promise<string> {
+        const settingsUrl = await this.stateManager.retrieve('Domain')
+        const url: string = settingsUrl ? settingsUrl : this.baseUrl
+        return url.replace(/\/*$/, '')
     }
 
     /**
@@ -255,14 +254,17 @@ export class AsuraScans implements ChapterProviding, HomePageSectionsProviding, 
 
     // @ts-ignore
     async getMangaShareUrl(mangaId: string): Promise<string> {
+        const url = await this.getBaseUrl()
         const slug = await this.getMangaSlug(mangaId)
-        return `${this.finalUrl}/${slug}`
+        return `${url}/${slug}`
     }
 
-    getMangaData = async (mangaId: string): Promise<string> => await this.loadRequestData(await this.getMangaShareUrl(mangaId))
+    async getMangaData(mangaId: string): Promise<string> {
+        const url = await this.getMangaShareUrl(mangaId)
+        return await this.loadRequestData(url)
+    }
 
     async getMangaDetails(mangaId: string): Promise<SourceManga> {
-        await this.getAndSetBaseUrl()
         const data = await this.getMangaData(mangaId)
         return this.parser.parseMangaDetails(data, mangaId, this)
     }
@@ -295,7 +297,7 @@ export class AsuraScans implements ChapterProviding, HomePageSectionsProviding, 
 
     async getChapterDetails(mangaId: string, chapterId: string): Promise<ChapterDetails> {
         const chapterLink: string = await this.getChapterSlug(mangaId, chapterId)
-        const url: string = await this.getAndSetBaseUrl()
+        const url: string = await this.getBaseUrl()
         const $ = await this.loadCheerioData(`${url}/${chapterLink}/`)
         return this.parser.parseChapterDetails($, mangaId, chapterId)
     }
@@ -366,7 +368,7 @@ export class AsuraScans implements ChapterProviding, HomePageSectionsProviding, 
     }
 
     async constructSearchRequest(page: number, query: SearchRequest): Promise<any> {
-        const url: string = await this.getAndSetBaseUrl()
+        const url: string = await this.getBaseUrl()
         let urlBuilder: URLBuilder = new URLBuilder(url)
             .addPathComponent(this.sourceTraversalPathName)
             .addQueryParameter('page', page.toString())
@@ -395,7 +397,7 @@ export class AsuraScans implements ChapterProviding, HomePageSectionsProviding, 
     }
 
     async getHomePageSections(sectionCallback: (section: HomeSection) => void): Promise<void> {
-        const url: string = await this.getAndSetBaseUrl()
+        const url: string = await this.getBaseUrl()
         const $ = await this.loadCheerioData(`${url}/`)
 
         const promises: Promise<void>[] = []
@@ -464,7 +466,7 @@ export class AsuraScans implements ChapterProviding, HomePageSectionsProviding, 
     }
 
     async getCloudflareBypassRequestAsync(): Promise<Request> {
-        const url: string = await this.getAndSetBaseUrl()
+        const url: string = await this.getBaseUrl()
         return App.createRequest({
             url: `${this.bypassPage || url}/`,
             method: 'GET',
