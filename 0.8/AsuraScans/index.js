@@ -3918,7 +3918,7 @@ const simpleUrl = require('simple-url');
 const ASURASCANS_DOMAIN = 'https://asuracomic.net';
 const ASURASCANS_API_DOMAIN = 'https://gg.asuracomic.net';
 exports.AsuraScansInfo = {
-    version: '4.0.8',
+    version: '4.0.9',
     name: 'AsuraScans',
     description: 'Extension that pulls manga from AsuraScans',
     author: 'Seyden',
@@ -4494,7 +4494,7 @@ class AsuraScansParser {
         const pages = new Set();
         const matches = data.matchAll(/(https:\/\/gg\.asuracomic\.net\/storage\/comics\/[^"\\]+)/gi);
         for (const match of Array.from(matches)) {
-            const url = match[1] ?? '';
+            const url = (match[1] ?? '').replace(' ', '%20');
             pages.add(url);
         }
         return App.createChapterDetails({
