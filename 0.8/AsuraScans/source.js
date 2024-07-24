@@ -3918,7 +3918,7 @@ const simpleUrl = require('simple-url');
 const ASURASCANS_DOMAIN = 'https://asuracomic.net';
 const ASURASCANS_API_DOMAIN = 'https://gg.asuracomic.net';
 exports.AsuraScansInfo = {
-    version: '4.0.5',
+    version: '4.0.6',
     name: 'AsuraScans',
     description: 'Extension that pulls manga from AsuraScans',
     author: 'Seyden',
@@ -3947,7 +3947,7 @@ class AsuraScans {
                                 id: 'domain_url',
                                 label: 'Domain',
                                 value: App.createDUIBinding({
-                                    get: async () => await this.getAndSetBaseUrl(),
+                                    get: async () => await this.getBaseUrl(),
                                     set: async (newValue) => await stateManager.store('Domain', newValue)
                                 })
                             })
@@ -3963,7 +3963,7 @@ class AsuraScans {
             requestTimeout: 30000,
             interceptor: {
                 interceptRequest: async (request) => {
-                    const url = await this.getAndSetBaseUrl();
+                    const url = await this.getBaseUrl();
                     request.headers = {
                         ...(request.headers ?? {}), ...{
                             'user-agent': await this.requestManager.getDefaultUserAgent(),
@@ -3999,7 +3999,6 @@ class AsuraScans {
         /**
          * The URL of the website. Eg. https://mangadark.com without a trailing slash
          */
-        this.finalUrl = '';
         this.baseUrl = ASURASCANS_DOMAIN;
         /**
          * The language code which this source supports.
@@ -4079,7 +4078,6 @@ class AsuraScans {
                 enabled: false
             }
         };
-        this.getMangaData = async (mangaId) => await this.loadRequestData(await this.getMangaShareUrl(mangaId));
     }
     async getSourceMenu() {
         return App.createDUISection({
@@ -4091,10 +4089,10 @@ class AsuraScans {
             ]
         });
     }
-    async getAndSetBaseUrl() {
-        let url = await this.stateManager.retrieve('Domain') ?? this.baseUrl;
-        this.finalUrl = url.replace(/\/*$/, '');
-        return url;
+    async getBaseUrl() {
+        const settingsUrl = await this.stateManager.retrieve('Domain');
+        const url = settingsUrl ? settingsUrl : this.baseUrl;
+        return url.replace(/\/*$/, '');
     }
     async getMangaSlug(mangaId) {
         return await this.stateManager.retrieve(`${mangaId}:slug`);
@@ -4104,11 +4102,15 @@ class AsuraScans {
     }
     // @ts-ignore
     async getMangaShareUrl(mangaId) {
+        const url = await this.getBaseUrl();
         const slug = await this.getMangaSlug(mangaId);
-        return `${this.finalUrl}/${slug}`;
+        return `${url}/${slug}`;
+    }
+    async getMangaData(mangaId) {
+        const url = await this.getMangaShareUrl(mangaId);
+        return await this.loadRequestData(url);
     }
     async getMangaDetails(mangaId) {
-        await this.getAndSetBaseUrl();
         const data = await this.getMangaData(mangaId);
         return this.parser.parseMangaDetails(data, mangaId, this);
     }
@@ -4135,7 +4137,7 @@ class AsuraScans {
     }
     async getChapterDetails(mangaId, chapterId) {
         const chapterLink = await this.getChapterSlug(mangaId, chapterId);
-        const url = await this.getAndSetBaseUrl();
+        const url = await this.getBaseUrl();
         const $ = await this.loadCheerioData(`${url}/${chapterLink}/`);
         return this.parser.parseChapterDetails($, mangaId, chapterId);
     }
@@ -4190,7 +4192,7 @@ class AsuraScans {
         };
     }
     async constructSearchRequest(page, query) {
-        const url = await this.getAndSetBaseUrl();
+        const url = await this.getBaseUrl();
         let urlBuilder = new UrlBuilder_1.URLBuilder(url)
             .addPathComponent(this.sourceTraversalPathName)
             .addQueryParameter('page', page.toString());
@@ -4214,7 +4216,7 @@ class AsuraScans {
         return false;
     }
     async getHomePageSections(sectionCallback) {
-        const url = await this.getAndSetBaseUrl();
+        const url = await this.getBaseUrl();
         const $ = await this.loadCheerioData(`${url}/`);
         const promises = [];
         const sectionValues = Object.values(this.sections).sort((n1, n2) => n1.sortIndex - n2.sortIndex);
@@ -4273,7 +4275,7 @@ class AsuraScans {
         return this.cheerio.load(await this.loadRequestData(url, method));
     }
     async getCloudflareBypassRequestAsync() {
-        const url = await this.getAndSetBaseUrl();
+        const url = await this.getBaseUrl();
         return App.createRequest({
             url: `${this.bypassPage || url}/`,
             method: 'GET',
