@@ -3918,7 +3918,7 @@ const simpleUrl = require('simple-url');
 const ASURASCANS_DOMAIN = 'https://asuracomic.net';
 const ASURASCANS_API_DOMAIN = 'https://gg.asuracomic.net';
 exports.AsuraScansInfo = {
-    version: '4.0.6',
+    version: '4.0.7',
     name: 'AsuraScans',
     description: 'Extension that pulls manga from AsuraScans',
     author: 'Seyden',
@@ -4173,7 +4173,7 @@ class AsuraScans {
             if (chapterTag) {
                 const chapterCount = parseInt(chapterTag.id.replace(`chapters:`, ''));
                 const chapterCountRegex = result.subtitle?.match(/(\d+)/);
-                if (chapterCountRegex?.[1] && parseInt(chapterCountRegex[1]) < chapterCount)
+                if (!chapterCountRegex || chapterCountRegex?.[1] && parseInt(chapterCountRegex[1]) < chapterCount)
                     continue;
             }
             manga.push(App.createPartialSourceManga({
