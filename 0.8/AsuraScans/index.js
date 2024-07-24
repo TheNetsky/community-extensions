@@ -3918,7 +3918,7 @@ const simpleUrl = require('simple-url');
 const ASURASCANS_DOMAIN = 'https://asuracomic.net';
 const ASURASCANS_API_DOMAIN = 'https://gg.asuracomic.net';
 exports.AsuraScansInfo = {
-    version: '4.0.3',
+    version: '4.0.4',
     name: 'AsuraScans',
     description: 'Extension that pulls manga from AsuraScans',
     author: 'Seyden',
@@ -4079,7 +4079,7 @@ class AsuraScans {
                 enabled: false
             }
         };
-        this.getMangaData = async (mangaId) => await this.loadRequestData(await this.getMangaUrl(mangaId));
+        this.getMangaData = async (mangaId) => await this.loadRequestData(await this.getMangaShareUrl(mangaId));
     }
     async getSourceMenu() {
         return App.createDUISection({
@@ -4102,13 +4102,10 @@ class AsuraScans {
     async setMangaSlug(mangaId, link) {
         await this.stateManager.store(`${mangaId}:slug`, link);
     }
-    async getMangaUrl(mangaId) {
+    // @ts-ignore
+    async getMangaShareUrl(mangaId) {
         const slug = await this.getMangaSlug(mangaId);
         return `${this.finalUrl}/${slug}`;
-    }
-    getMangaShareUrl(mangaId) {
-        // Not implemented because async
-        return "";
     }
     async getMangaDetails(mangaId) {
         await this.getAndSetBaseUrl();
