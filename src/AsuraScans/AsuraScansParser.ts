@@ -36,7 +36,7 @@ export class AsuraScansParser {
         const covers = [comicObj.comic.cover]
         let description = comicObj.comic.summary.trim()
         if (description != '') {
-            description = source.cheerio.load(description).text()
+            description = this.decodeHTMLEntity(source.cheerio.load(description).text().replace(/\\r\\n/gm, '\n'))
         }
         const rating = comicObj.comic.rating
 
