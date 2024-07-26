@@ -15,12 +15,7 @@ import entities = require('entities')
 
 export class AsuraScansParser {
     parseMangaDetails(data: string, mangaId: string, source: any): SourceManga {
-        let obj = /self.__next_f.push\(\[1,"9:\[\\"\$\\",\\"div\\",null,(.*?)(]\\n"]\))/gm.exec(data)?.[1] ?? '';
-        if (obj == '') {
-            throw new Error(`Failed to find page details script for manga ${mangaId}`) // If null, throw error, else parse data to json.
-        }
-
-        obj = extractMangaData(obj.replace(/\\"/g, '"').replace(/\\\\"/g, '\\"'), "comic") ?? ''
+        const obj = extractMangaData(data.replace(/\\"/g, '"').replace(/\\\\"/g, '\\"'), "comic") ?? ''
         if (obj == '') {
             throw new Error(`Failed to parse comic object for manga ${mangaId}`) // If null, throw error, else parse data to json.
         }
@@ -89,12 +84,7 @@ export class AsuraScansParser {
     }
 
     async parseChapterList(data: string, mangaId: string, source: any): Promise<Chapter[]> {
-        let obj = /self.__next_f.push\(\[1,"9:\[\\"\$\\",\\"div\\",null,(.*?)(]\\n"]\))/gm.exec(data)?.[1] ?? '';
-        if (obj == '') {
-            throw new Error(`Failed to find page details script for manga ${mangaId}`) // If null, throw error, else parse data to json.
-        }
-
-        obj = extractMangaData(obj.replace(/\\"/g, '"').replace(/\\\\"/g, '\\"'), "chapters") ?? ''
+        const obj = extractMangaData(data.replace(/\\"/g, '"').replace(/\\\\"/g, '\\"'), "chapters") ?? ''
         if (obj == '') {
             throw new Error(`Failed to parse chapters object for manga ${mangaId}`) // If null, throw error, else parse data to json.
         }
