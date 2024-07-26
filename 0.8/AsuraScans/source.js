@@ -3918,7 +3918,7 @@ const simpleUrl = require('simple-url');
 const ASURASCANS_DOMAIN = 'https://asuracomic.net';
 const ASURASCANS_API_DOMAIN = 'https://gg.asuracomic.net';
 exports.AsuraScansInfo = {
-    version: '4.1.0',
+    version: '4.1.1',
     name: 'AsuraScans',
     description: 'Extension that pulls manga from AsuraScans',
     author: 'Seyden',
@@ -4692,7 +4692,7 @@ class URLBuilder {
             ? '?'
             : '';
         finalUrl += Object.entries(this.parameters).map(entry => {
-            if (entry[1] == null && !includeUndefinedParameters) {
+            if (!entry[1] && !includeUndefinedParameters) {
                 return undefined;
             }
             if (Array.isArray(entry[1]) && entry[1].length) {
