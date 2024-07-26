@@ -3918,7 +3918,7 @@ const simpleUrl = require('simple-url');
 const ASURASCANS_DOMAIN = 'https://asuracomic.net';
 const ASURASCANS_API_DOMAIN = 'https://gg.asuracomic.net';
 exports.AsuraScansInfo = {
-    version: '4.0.9',
+    version: '4.0.10',
     name: 'AsuraScans',
     description: 'Extension that pulls manga from AsuraScans',
     author: 'Seyden',
@@ -4197,7 +4197,7 @@ class AsuraScans {
             .addPathComponent(this.sourceTraversalPathName)
             .addQueryParameter('page', page.toString());
         if (query?.title) {
-            urlBuilder = urlBuilder.addQueryParameter('name', encodeURIComponent(query?.title.replace(/[’–][a-z]*/g, '') ?? ''));
+            urlBuilder = urlBuilder.addQueryParameter('name', encodeURIComponent(query?.title.replace(/[’‘´`'\-][a-z]*/g, '%') ?? ''));
         }
         urlBuilder = urlBuilder
             .addQueryParameter('genres', (0, AsuraScansHelper_1.getFilterTagsBySection)('genres', query?.includedTags))
@@ -4384,11 +4384,7 @@ class AsuraScansParser {
         };
     }
     parseMangaDetails(data, mangaId, source) {
-        let obj = /self.__next_f.push\(\[1,"9:\[\\"\$\\",\\"div\\",null,(.*?)(]\\n"]\))/gm.exec(data)?.[1] ?? '';
-        if (obj == '') {
-            throw new Error(`Failed to find page details script for manga ${mangaId}`); // If null, throw error, else parse data to json.
-        }
-        obj = (0, AsuraScansHelper_1.extractMangaData)(obj.replace(/\\"/g, '"').replace(/\\\\"/g, '\\"'), "comic") ?? '';
+        const obj = (0, AsuraScansHelper_1.extractMangaData)(data.replace(/\\"/g, '"').replace(/\\\\"/g, '\\"'), "comic") ?? '';
         if (obj == '') {
             throw new Error(`Failed to parse comic object for manga ${mangaId}`); // If null, throw error, else parse data to json.
         }
@@ -4450,11 +4446,7 @@ class AsuraScansParser {
         });
     }
     async parseChapterList(data, mangaId, source) {
-        let obj = /self.__next_f.push\(\[1,"9:\[\\"\$\\",\\"div\\",null,(.*?)(]\\n"]\))/gm.exec(data)?.[1] ?? '';
-        if (obj == '') {
-            throw new Error(`Failed to find page details script for manga ${mangaId}`); // If null, throw error, else parse data to json.
-        }
-        obj = (0, AsuraScansHelper_1.extractMangaData)(obj.replace(/\\"/g, '"').replace(/\\\\"/g, '\\"'), "chapters") ?? '';
+        const obj = (0, AsuraScansHelper_1.extractMangaData)(data.replace(/\\"/g, '"').replace(/\\\\"/g, '\\"'), "chapters") ?? '';
         if (obj == '') {
             throw new Error(`Failed to parse chapters object for manga ${mangaId}`); // If null, throw error, else parse data to json.
         }
