@@ -43,7 +43,7 @@ export class URLBuilder {
                     ? '?'
                     : ''
         finalUrl += Object.entries(this.parameters).map(entry => {
-            if (entry[1] == null && !includeUndefinedParameters) {
+            if (!entry[1] && !includeUndefinedParameters) {
                 return undefined
             }
 
