@@ -3918,7 +3918,7 @@ const simpleUrl = require('simple-url');
 const ASURASCANS_DOMAIN = 'https://asuracomic.net';
 const ASURASCANS_API_DOMAIN = 'https://gg.asuracomic.net';
 exports.AsuraScansInfo = {
-    version: '4.1.2',
+    version: '4.1.3',
     name: 'AsuraScans',
     description: 'Extension that pulls manga from AsuraScans',
     author: 'Seyden',
@@ -4134,7 +4134,7 @@ class AsuraScans {
     }
     async getMangaDetails(mangaId) {
         const data = await this.getMangaRequest(mangaId);
-        return this.parser.parseMangaDetails(data, mangaId, this);
+        return await this.parser.parseMangaDetails(data, mangaId, this);
     }
     async getChapters(mangaId) {
         const data = await this.getMangaRequest(mangaId);
@@ -4405,7 +4405,7 @@ class AsuraScansParser {
             return isLast;
         };
     }
-    parseMangaDetails(data, mangaId, source) {
+    async parseMangaDetails(data, mangaId, source) {
         const obj = (0, AsuraScansHelper_1.extractMangaData)(data.replace(/\\"/g, '"').replace(/\\\\"/g, '\\"'), "comic") ?? '';
         if (obj == '') {
             throw new Error(`Failed to parse comic object for manga ${mangaId}`); // If null, throw error, else parse data to json.
@@ -4420,6 +4420,10 @@ class AsuraScansParser {
         const covers = [comicObj.comic.cover];
         const description = this.decodeHTMLEntity($('span.font-medium').text().trim().replace(/\\r\\n/gm, '\n'));
         const rating = comicObj.comic.rating;
+        const slug = comicObj.comic.slug?.trim();
+        if (slug) {
+            await source.setMangaSlug(mangaId, `series/${slug}`);
+        }
         const rawStatus = comicObj.comic.status.name.trim();
         let status;
         switch (rawStatus.toLowerCase()) {
