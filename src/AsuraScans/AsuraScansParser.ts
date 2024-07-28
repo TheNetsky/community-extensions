@@ -95,13 +95,14 @@ export class AsuraScansParser {
         if (obj == '') {
             throw new Error(`Failed to parse comic object for manga ${mangaId}`) // If null, throw error, else parse data to json.
         }
-        
+
+        const comicObj = JSON.parse(obj)
+
         obj = extractMangaData(tempData, "chapters") ?? ''
         if (obj == '') {
             throw new Error(`Failed to parse chapters object for manga ${mangaId}`) // If null, throw error, else parse data to json.
         }
 
-        const comicObj = JSON.parse(obj)
         const chaptersObj = JSON.parse(obj)
 
         const slug = comicObj.comic.slug?.trim()
