@@ -14,7 +14,7 @@ import {
 import entities = require('entities')
 
 export class AsuraScansParser {
-    parseMangaDetails(data: string, mangaId: string, source: any): SourceManga {
+    async parseMangaDetails(data: string, mangaId: string, source: any): Promise<SourceManga> {
         const obj = extractMangaData(data.replace(/\\"/g, '"').replace(/\\\\"/g, '\\"'), "comic") ?? ''
         if (obj == '') {
             throw new Error(`Failed to parse comic object for manga ${mangaId}`) // If null, throw error, else parse data to json.
@@ -33,6 +33,11 @@ export class AsuraScansParser {
         const covers = [comicObj.comic.cover]
         const description = this.decodeHTMLEntity($('span.font-medium').text().trim().replace(/\\r\\n/gm, '\n'))
         const rating = comicObj.comic.rating
+        
+        const slug = comicObj.comic.slug?.trim()
+        if (slug)  {
+            await source.setMangaSlug(mangaId, `series/${slug}`)
+        }
 
         const rawStatus = comicObj.comic.status.name.trim()
         let status
