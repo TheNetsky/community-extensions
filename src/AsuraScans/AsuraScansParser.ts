@@ -90,14 +90,31 @@ export class AsuraScansParser {
     }
 
     async parseChapterList(data: string, mangaId: string, source: any): Promise<Chapter[]> {
-        const obj = extractMangaData(data.replace(/\\"/g, '"').replace(/\\\\"/g, '\\"'), "chapters") ?? ''
+        const tempData = data.replace(/\\"/g, '"').replace(/\\\\"/g, '\\"')
+        let obj = extractMangaData(tempData, "comic") ?? ''
+        if (obj == '') {
+            throw new Error(`Failed to parse comic object for manga ${mangaId}`) // If null, throw error, else parse data to json.
+        }
+        
+        obj = extractMangaData(tempData, "chapters") ?? ''
         if (obj == '') {
             throw new Error(`Failed to parse chapters object for manga ${mangaId}`) // If null, throw error, else parse data to json.
         }
 
-        let chaptersObj = JSON.parse(obj)
+        const comicObj = JSON.parse(obj)
+        const chaptersObj = JSON.parse(obj)
 
-        const mangaUrl = await source.getMangaSlug(mangaId)
+        const slug = comicObj.comic.slug?.trim()
+        let mangaUrl: string = ''
+        if (slug)  {
+            mangaUrl = `series/${slug}`
+            await source.setMangaSlug(mangaId, mangaUrl)
+        }
+
+        if (!mangaUrl) {
+            mangaUrl = await source.getMangaSlug(mangaId)
+        }
+        
         const chapters: Chapter[] = []
         let sortingIndex = 0
         for (const chapter of chaptersObj.chapters.reverse())
