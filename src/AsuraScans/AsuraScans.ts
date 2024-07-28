@@ -42,14 +42,13 @@ import {
     SourceStateManager
 } from '@paperback/types/lib'
 
-
 const simpleUrl = require('simple-url')
 
 const ASURASCANS_DOMAIN = 'https://asuracomic.net'
 const ASURASCANS_API_DOMAIN = 'https://gg.asuracomic.net'
 
 export const AsuraScansInfo: SourceInfo = {
-    version: '4.1.1',
+    version: '4.1.2',
     name: 'AsuraScans',
     description: 'Extension that pulls manga from AsuraScans',
     author: 'Seyden',
@@ -244,6 +243,33 @@ export class AsuraScans implements ChapterProviding, HomePageSectionsProviding, 
         }
     }
 
+    // Ugly workaround to fasten up migrations and updates, paperback doesnt support any other way for not double requesting
+    mangaDataRequests: { [Key: string]: { expires: number, data: Promise<string> } } = { }
+
+    async getMangaRequest(mangaId: string): Promise<string> {
+        let request = this.mangaDataRequests[mangaId]
+        if (request && request.expires > Date.now()) {
+            return request.data
+        }
+
+        for (const key in this.mangaDataRequests) {
+            let tempRequest = this.mangaDataRequests[key]
+            if (tempRequest!.expires < Date.now()) {
+                delete this.mangaDataRequests[key]
+            }
+        }
+
+        this.mangaDataRequests[mangaId] = {
+            expires: Date.now() + 5000,
+            data: new Promise(async resolve => {
+                const result = await this.getMangaData(mangaId)
+                resolve(result)
+            })
+        }
+
+        return this.mangaDataRequests[mangaId]!.data
+    }
+
     async getMangaSlug(mangaId: string): Promise<string> {
         return await this.stateManager.retrieve(`${mangaId}:slug`)
     }
@@ -265,12 +291,12 @@ export class AsuraScans implements ChapterProviding, HomePageSectionsProviding, 
     }
 
     async getMangaDetails(mangaId: string): Promise<SourceManga> {
-        const data = await this.getMangaData(mangaId)
+        const data = await this.getMangaRequest(mangaId)
         return this.parser.parseMangaDetails(data, mangaId, this)
     }
 
     async getChapters(mangaId: string): Promise<Chapter[]> {
-        const data = await this.getMangaData(mangaId)
+        const data = await this.getMangaRequest(mangaId)
         const chapters = await this.parser.parseChapterList(data, mangaId, this)
         if (!Array.isArray(chapters) || chapters.length == 0) {
             throw new Error(`Couldn't find any chapters for mangaId ${mangaId}, throwing an error to prevent loosing reading progress`)
@@ -298,8 +324,8 @@ export class AsuraScans implements ChapterProviding, HomePageSectionsProviding, 
     async getChapterDetails(mangaId: string, chapterId: string): Promise<ChapterDetails> {
         const chapterLink: string = await this.getChapterSlug(mangaId, chapterId)
         const url: string = await this.getBaseUrl()
-        const $ = await this.loadCheerioData(`${url}/${chapterLink}/`)
-        return this.parser.parseChapterDetails($, mangaId, chapterId)
+        const data = await this.loadRequestData(`${url}/${chapterLink}/`)
+        return this.parser.parseChapterDetails(data, mangaId, chapterId)
     }
 
     async getSearchTags(): Promise<TagSection[]> {
@@ -336,7 +362,7 @@ export class AsuraScans implements ChapterProviding, HomePageSectionsProviding, 
         const request = await this.constructSearchRequest(page, query)
         const response = await this.requestManager.schedule(request, 1)
         this.checkResponseErrors(response)
-        const $ = this.cheerio.load(response.data as string)
+        const $ = this.cheerio.load(response.data as string, { _useHtmlParser2: true })
         const results = await this.parser.parseSearchResults($, this)
 
         const chapterTag = query?.includedTags.find((x: Tag) => x.id.startsWith('chapters'))
@@ -462,7 +488,7 @@ export class AsuraScans implements ChapterProviding, HomePageSectionsProviding, 
     }
 
     async loadCheerioData(url: string, method: string = 'GET'): Promise<CheerioStatic> {
-        return this.cheerio.load(await this.loadRequestData(url, method))
+        return this.cheerio.load(await this.loadRequestData(url, method), { _useHtmlParser2: true })
     }
 
     async getCloudflareBypassRequestAsync(): Promise<Request> {

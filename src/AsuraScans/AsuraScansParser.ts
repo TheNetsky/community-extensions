@@ -20,7 +20,8 @@ export class AsuraScansParser {
             throw new Error(`Failed to parse comic object for manga ${mangaId}`) // If null, throw error, else parse data to json.
         }
 
-        const $ = source.cheerio.load(data)
+        const $ = source.cheerio.load(data, { _useHtmlParser2: true })
+
         const comicObj = JSON.parse(obj)
 
         const titles: string[] = []
@@ -127,9 +128,7 @@ export class AsuraScansParser {
         })
     }
 
-    parseChapterDetails($: CheerioStatic, mangaId: string, chapterId: string): ChapterDetails {
-        const data = $.html()
-
+    parseChapterDetails(data: string, mangaId: string, chapterId: string): ChapterDetails {
         const pages = new Set<string>()
 
         const matches = data.matchAll(/(https:\/\/gg\.asuracomic\.net\/storage\/comics\/[^"\\]+)/gi)
@@ -187,7 +186,7 @@ export class AsuraScansParser {
         }
 
         for (const manga of mangas.toArray()) {
-            const slug = manga.attribs['href'] ?? ''
+            const slug = $(manga).attr('href') ?? ''
 
             if (!slug) {
                 throw new Error(`Unable to parse slug (${slug})!`)
