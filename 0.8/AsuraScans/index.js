@@ -3918,7 +3918,7 @@ const simpleUrl = require('simple-url');
 const ASURASCANS_DOMAIN = 'https://asuracomic.net';
 const ASURASCANS_API_DOMAIN = 'https://gg.asuracomic.net';
 exports.AsuraScansInfo = {
-    version: '4.1.1',
+    version: '4.1.2',
     name: 'AsuraScans',
     description: 'Extension that pulls manga from AsuraScans',
     author: 'Seyden',
@@ -4078,6 +4078,8 @@ class AsuraScans {
                 enabled: false
             }
         };
+        // Ugly workaround to fasten up migrations and updates, paperback doesnt support any other way for not double requesting
+        this.mangaDataRequests = {};
     }
     async getSourceMenu() {
         return App.createDUISection({
@@ -4093,6 +4095,26 @@ class AsuraScans {
         const settingsUrl = await this.stateManager.retrieve('Domain');
         const url = settingsUrl ? settingsUrl : this.baseUrl;
         return url.replace(/\/*$/, '');
+    }
+    async getMangaRequest(mangaId) {
+        let request = this.mangaDataRequests[mangaId];
+        if (request && request.expires > Date.now()) {
+            return request.data;
+        }
+        for (const key in this.mangaDataRequests) {
+            let tempRequest = this.mangaDataRequests[key];
+            if (tempRequest.expires < Date.now()) {
+                delete this.mangaDataRequests[key];
+            }
+        }
+        this.mangaDataRequests[mangaId] = {
+            expires: Date.now() + 5000,
+            data: new Promise(async (resolve) => {
+                const result = await this.getMangaData(mangaId);
+                resolve(result);
+            })
+        };
+        return this.mangaDataRequests[mangaId].data;
     }
     async getMangaSlug(mangaId) {
         return await this.stateManager.retrieve(`${mangaId}:slug`);
@@ -4111,11 +4133,11 @@ class AsuraScans {
         return await this.loadRequestData(url);
     }
     async getMangaDetails(mangaId) {
-        const data = await this.getMangaData(mangaId);
+        const data = await this.getMangaRequest(mangaId);
         return this.parser.parseMangaDetails(data, mangaId, this);
     }
     async getChapters(mangaId) {
-        const data = await this.getMangaData(mangaId);
+        const data = await this.getMangaRequest(mangaId);
         const chapters = await this.parser.parseChapterList(data, mangaId, this);
         if (!Array.isArray(chapters) || chapters.length == 0) {
             throw new Error(`Couldn't find any chapters for mangaId ${mangaId}, throwing an error to prevent loosing reading progress`);
@@ -4138,8 +4160,8 @@ class AsuraScans {
     async getChapterDetails(mangaId, chapterId) {
         const chapterLink = await this.getChapterSlug(mangaId, chapterId);
         const url = await this.getBaseUrl();
-        const $ = await this.loadCheerioData(`${url}/${chapterLink}/`);
-        return this.parser.parseChapterDetails($, mangaId, chapterId);
+        const data = await this.loadRequestData(`${url}/${chapterLink}/`);
+        return this.parser.parseChapterDetails(data, mangaId, chapterId);
     }
     async getSearchTags() {
         const data = await this.loadRequestData(`${ASURASCANS_API_DOMAIN}/api/series/filters`);
@@ -4165,7 +4187,7 @@ class AsuraScans {
         const request = await this.constructSearchRequest(page, query);
         const response = await this.requestManager.schedule(request, 1);
         this.checkResponseErrors(response);
-        const $ = this.cheerio.load(response.data);
+        const $ = this.cheerio.load(response.data, { _useHtmlParser2: true });
         const results = await this.parser.parseSearchResults($, this);
         const chapterTag = query?.includedTags.find((x) => x.id.startsWith('chapters'));
         const manga = [];
@@ -4272,7 +4294,7 @@ class AsuraScans {
         return response.data;
     }
     async loadCheerioData(url, method = 'GET') {
-        return this.cheerio.load(await this.loadRequestData(url, method));
+        return this.cheerio.load(await this.loadRequestData(url, method), { _useHtmlParser2: true });
     }
     async getCloudflareBypassRequestAsync() {
         const url = await this.getBaseUrl();
@@ -4388,7 +4410,7 @@ class AsuraScansParser {
         if (obj == '') {
             throw new Error(`Failed to parse comic object for manga ${mangaId}`); // If null, throw error, else parse data to json.
         }
-        const $ = source.cheerio.load(data);
+        const $ = source.cheerio.load(data, { _useHtmlParser2: true });
         const comicObj = JSON.parse(obj);
         const titles = [];
         titles.push(comicObj.comic.name.trim());
@@ -4481,8 +4503,7 @@ class AsuraScansParser {
             return App.createChapter(chapter);
         });
     }
-    parseChapterDetails($, mangaId, chapterId) {
-        const data = $.html();
+    parseChapterDetails(data, mangaId, chapterId) {
         const pages = new Set();
         const matches = data.matchAll(/(https:\/\/gg\.asuracomic\.net\/storage\/comics\/[^"\\]+)/gi);
         for (const match of Array.from(matches)) {
@@ -4532,7 +4553,7 @@ class AsuraScansParser {
             return results;
         }
         for (const manga of mangas.toArray()) {
-            const slug = manga.attribs['href'] ?? '';
+            const slug = $(manga).attr('href') ?? '';
             if (!slug) {
                 throw new Error(`Unable to parse slug (${slug})!`);
             }
