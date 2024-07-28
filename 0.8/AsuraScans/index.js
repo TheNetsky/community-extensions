@@ -3918,7 +3918,7 @@ const simpleUrl = require('simple-url');
 const ASURASCANS_DOMAIN = 'https://asuracomic.net';
 const ASURASCANS_API_DOMAIN = 'https://gg.asuracomic.net';
 exports.AsuraScansInfo = {
-    version: '4.1.4',
+    version: '4.1.5',
     name: 'AsuraScans',
     description: 'Extension that pulls manga from AsuraScans',
     author: 'Seyden',
@@ -4477,11 +4477,11 @@ class AsuraScansParser {
         if (obj == '') {
             throw new Error(`Failed to parse comic object for manga ${mangaId}`); // If null, throw error, else parse data to json.
         }
+        const comicObj = JSON.parse(obj);
         obj = (0, AsuraScansHelper_1.extractMangaData)(tempData, "chapters") ?? '';
         if (obj == '') {
             throw new Error(`Failed to parse chapters object for manga ${mangaId}`); // If null, throw error, else parse data to json.
         }
-        const comicObj = JSON.parse(obj);
         const chaptersObj = JSON.parse(obj);
         const slug = comicObj.comic.slug?.trim();
         let mangaUrl = '';
