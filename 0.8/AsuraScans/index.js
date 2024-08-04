@@ -2784,6 +2784,7 @@ var defaults = {
     parameterLimit: 1000,
     parseArrays: true,
     plainObjects: false,
+    strictDepth: false,
     strictNullHandling: false
 };
 
@@ -2961,9 +2962,12 @@ var parseKeys = function parseQueryStringKeys(givenKey, val, options, valuesPars
         keys.push(segment[1]);
     }
 
-    // If there's a remainder, just add whatever is left
+    // If there's a remainder, check strictDepth option for throw, else just add whatever is left
 
     if (segment) {
+        if (options.strictDepth === true) {
+            throw new RangeError('Input depth exceeded depth option of ' + options.depth + ' and strictDepth is true');
+        }
         keys.push('[' + key.slice(segment.index) + ']');
     }
 
@@ -3020,6 +3024,7 @@ var normalizeParseOptions = function normalizeParseOptions(opts) {
         parameterLimit: typeof opts.parameterLimit === 'number' ? opts.parameterLimit : defaults.parameterLimit,
         parseArrays: opts.parseArrays !== false,
         plainObjects: typeof opts.plainObjects === 'boolean' ? opts.plainObjects : defaults.plainObjects,
+        strictDepth: typeof opts.strictDepth === 'boolean' ? !!opts.strictDepth : defaults.strictDepth,
         strictNullHandling: typeof opts.strictNullHandling === 'boolean' ? opts.strictNullHandling : defaults.strictNullHandling
     };
 };
@@ -3918,7 +3923,7 @@ const simpleUrl = require('simple-url');
 const ASURASCANS_DOMAIN = 'https://asuracomic.net';
 const ASURASCANS_API_DOMAIN = 'https://gg.asuracomic.net';
 exports.AsuraScansInfo = {
-    version: '4.1.5',
+    version: '4.1.6',
     name: 'AsuraScans',
     description: 'Extension that pulls manga from AsuraScans',
     author: 'Seyden',
@@ -3973,6 +3978,11 @@ class AsuraScans {
                     const path = simpleUrl.parse(request.url, true);
                     if (!path.protocol || path.protocol == 'http') {
                         path.protocol = 'https';
+                        request.url = simpleUrl.create(path);
+                    }
+                    if (path.host.includes(`localhost`)) {
+                        const url = await this.getBaseUrl();
+                        path.host = simpleUrl.parse(url, true).host;
                         request.url = simpleUrl.create(path);
                     }
                     if ((0, AsuraScansHelper_1.isImgLink)(request.url)) {
@@ -4669,7 +4679,7 @@ class AsuraScansParser {
             image = 'https://i.imgur.com/GYUxEX8.png';
         }
         image = image?.split('?resize')[0] ?? '';
-        return encodeURI(decodeURI(this.decodeHTMLEntity(image?.trim() ?? '')));
+        return decodeURI(this.decodeHTMLEntity(image?.trim() ?? ''));
     }
     decodeHTMLEntity(str) {
         if (!str) {
