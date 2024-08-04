@@ -33,7 +33,7 @@ export class AsuraScansParser {
         const covers = [comicObj.comic.cover]
         const description = this.decodeHTMLEntity($('span.font-medium').text().trim().replace(/\\r\\n/gm, '\n'))
         const rating = comicObj.comic.rating
-        
+
         const slug = comicObj.comic.slug?.trim()
         if (slug)  {
             await source.setMangaSlug(mangaId, `series/${slug}`)
@@ -115,7 +115,7 @@ export class AsuraScansParser {
         if (!mangaUrl) {
             mangaUrl = await source.getMangaSlug(mangaId)
         }
-        
+
         const chapters: Chapter[] = []
         let sortingIndex = 0
         for (const chapter of chaptersObj.chapters.reverse())
@@ -337,7 +337,7 @@ export class AsuraScansParser {
 
         image = image?.split('?resize')[0] ?? ''
 
-        return encodeURI(decodeURI(this.decodeHTMLEntity(image?.trim() ?? '')))
+        return decodeURI(this.decodeHTMLEntity(image?.trim() ?? ''))
     }
 
     protected decodeHTMLEntity(str: string): string {

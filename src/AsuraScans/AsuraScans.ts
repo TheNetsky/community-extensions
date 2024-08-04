@@ -48,7 +48,7 @@ const ASURASCANS_DOMAIN = 'https://asuracomic.net'
 const ASURASCANS_API_DOMAIN = 'https://gg.asuracomic.net'
 
 export const AsuraScansInfo: SourceInfo = {
-    version: '4.1.5',
+    version: '4.1.6',
     name: 'AsuraScans',
     description: 'Extension that pulls manga from AsuraScans',
     author: 'Seyden',
@@ -120,6 +120,12 @@ export class AsuraScans implements ChapterProviding, HomePageSectionsProviding, 
                 const path: any = simpleUrl.parse(request.url, true)
                 if (!path.protocol || path.protocol == 'http') {
                     path.protocol = 'https'
+                    request.url = simpleUrl.create(path)
+                }
+
+                if (path.host.includes(`localhost`)) {
+                    const url: string = await this.getBaseUrl()
+                    path.host = simpleUrl.parse(url, true).host
                     request.url = simpleUrl.create(path)
                 }
 
