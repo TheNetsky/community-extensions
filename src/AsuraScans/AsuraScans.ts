@@ -48,7 +48,7 @@ const ASURASCANS_DOMAIN = 'https://asuracomic.net'
 const ASURASCANS_API_DOMAIN = 'https://gg.asuracomic.net'
 
 export const AsuraScansInfo: SourceInfo = {
-    version: '4.1.6',
+    version: '4.1.7',
     name: 'AsuraScans',
     description: 'Extension that pulls manga from AsuraScans',
     author: 'Seyden',
@@ -267,9 +267,14 @@ export class AsuraScans implements ChapterProviding, HomePageSectionsProviding, 
 
         this.mangaDataRequests[mangaId] = {
             expires: Date.now() + 5000,
-            data: new Promise(async resolve => {
-                const result = await this.getMangaData(mangaId)
-                resolve(result)
+            data: new Promise<string>(async (resolve, reject) => {
+                try {
+                    const result = await this.getMangaData(mangaId)
+                    resolve(result)
+                }
+                catch (e) {
+                    reject(e)
+                }
             })
         }
 
@@ -286,8 +291,12 @@ export class AsuraScans implements ChapterProviding, HomePageSectionsProviding, 
 
     // @ts-ignore
     async getMangaShareUrl(mangaId: string): Promise<string> {
-        const url = await this.getBaseUrl()
         const slug = await this.getMangaSlug(mangaId)
+        if (!slug) {
+            throw new Error(`Couldn't find a url for mangaId ${mangaId}, try migrating the title or contact a developer!`)
+        }
+
+        const url = await this.getBaseUrl()
         return `${url}/${slug}`
     }
 
