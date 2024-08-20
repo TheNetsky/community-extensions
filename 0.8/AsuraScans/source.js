@@ -3912,6 +3912,9 @@ function isEmptyObj(obj) {
 }
 },{"qs":93}],100:[function(require,module,exports){
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AsuraScans = exports.AsuraScansInfo = void 0;
 /* eslint-disable linebreak-style */
@@ -3919,11 +3922,11 @@ const types_1 = require("@paperback/types");
 const AsuraScansParser_1 = require("./AsuraScansParser");
 const UrlBuilder_1 = require("./UrlBuilder");
 const AsuraScansHelper_1 = require("./AsuraScansHelper");
-const simpleUrl = require('simple-url');
+const simple_url_1 = __importDefault(require("simple-url"));
 const ASURASCANS_DOMAIN = 'https://asuracomic.net';
 const ASURASCANS_API_DOMAIN = 'https://gg.asuracomic.net';
 exports.AsuraScansInfo = {
-    version: '4.1.7',
+    version: '4.1.8',
     name: 'AsuraScans',
     description: 'Extension that pulls manga from AsuraScans',
     author: 'Seyden',
@@ -3972,27 +3975,27 @@ class AsuraScans {
                     request.headers = {
                         ...(request.headers ?? {}), ...{
                             'user-agent': await this.requestManager.getDefaultUserAgent(),
-                            referer: `${url}/`,
+                            referer: `${url}/`
                         }
                     };
-                    const path = simpleUrl.parse(request.url, true);
+                    const path = simple_url_1.default.parse(request.url, true);
                     if (!path.protocol || path.protocol == 'http') {
                         path.protocol = 'https';
-                        request.url = simpleUrl.create(path);
+                        request.url = simple_url_1.default.create(path);
                     }
-                    if (path.host.includes(`localhost`)) {
+                    if (path.host.includes('localhost')) {
                         const url = await this.getBaseUrl();
-                        path.host = simpleUrl.parse(url, true).host;
-                        request.url = simpleUrl.create(path);
+                        path.host = simple_url_1.default.parse(url, true).host;
+                        request.url = simple_url_1.default.create(path);
                     }
                     if ((0, AsuraScansHelper_1.isImgLink)(request.url)) {
-                        let overrideUrl = await this.stateManager.retrieve('Domain');
+                        const overrideUrl = await this.stateManager.retrieve('Domain');
                         if (overrideUrl && overrideUrl != this.baseUrl) {
-                            const basePath = simpleUrl.parse(this.baseUrl, true);
-                            const overridePath = simpleUrl.parse(overrideUrl, true);
+                            const basePath = simple_url_1.default.parse(this.baseUrl, true);
+                            const overridePath = simple_url_1.default.parse(overrideUrl, true);
                             if (path.host.includes(basePath.host) || path.host.includes(overridePath.host)) {
                                 path.host = overridePath.host;
-                                request.url = simpleUrl.create(path);
+                                request.url = simple_url_1.default.create(path);
                             }
                         }
                     }
@@ -4054,14 +4057,14 @@ class AsuraScans {
                 selectorFunc: ($) => $('div.w-full', $('h3:contains(Latest Updates)')?.parent()?.next()),
                 titleSelectorFunc: ($, element) => $('span.font-medium', element).text().trim(),
                 subtitleSelectorFunc: ($, element) => {
-                    let obj = $('div.text-sm', element).first();
-                    let hiddenObj = $('div.hidden', obj);
+                    const obj = $('div.text-sm', element).first();
+                    const hiddenObj = $('div.hidden', obj);
                     if (hiddenObj.length != 0)
                         return hiddenObj.text().trim();
                     return obj.text().trim();
                 },
                 getViewMoreItemsFunc: (page) => `page/${page}`,
-                sortIndex: 20,
+                sortIndex: 20
             },
             'top_alltime': {
                 ...AsuraScansHelper_1.DefaultHomeSectionData,
@@ -4107,12 +4110,12 @@ class AsuraScans {
         return url.replace(/\/*$/, '');
     }
     async getMangaRequest(mangaId) {
-        let request = this.mangaDataRequests[mangaId];
+        const request = this.mangaDataRequests[mangaId];
         if (request && request.expires > Date.now()) {
             return request.data;
         }
         for (const key in this.mangaDataRequests) {
-            let tempRequest = this.mangaDataRequests[key];
+            const tempRequest = this.mangaDataRequests[key];
             if (tempRequest.expires < Date.now()) {
                 delete this.mangaDataRequests[key];
             }
@@ -4182,8 +4185,13 @@ class AsuraScans {
         return this.parser.parseChapterDetails(data, mangaId, chapterId);
     }
     async getSearchTags() {
-        const data = await this.loadRequestData(`${ASURASCANS_API_DOMAIN}/api/series/filters`);
-        return this.parser.parseTags(data);
+        try {
+            const data = await this.loadRequestData(`${ASURASCANS_API_DOMAIN}/api/series/filters`);
+            return this.parser.parseTags(JSON.parse(data));
+        }
+        catch (error) {
+            throw new Error(error);
+        }
     }
     async getSearchResults(query, metadata) {
         let result;
@@ -4211,7 +4219,7 @@ class AsuraScans {
         const manga = [];
         for (const result of results) {
             if (chapterTag) {
-                const chapterCount = parseInt(chapterTag.id.replace(`chapters:`, ''));
+                const chapterCount = parseInt(chapterTag.id.replace('chapters:', ''));
                 const chapterCountRegex = result.subtitle?.match(/(\d+)/);
                 if (!chapterCountRegex || chapterCountRegex?.[1] && parseInt(chapterCountRegex[1]) < chapterCount)
                     continue;
@@ -4280,7 +4288,7 @@ class AsuraScans {
         await Promise.all(promises);
     }
     async getViewMoreItems(homepageSectionId, metadata) {
-        throw new Error(`Not implemented yet!`);
+        throw new Error('Not implemented yet!');
         /*const page: number = metadata?.page ?? 1
 
         // @ts-ignore
@@ -4424,7 +4432,7 @@ class AsuraScansParser {
         };
     }
     async parseMangaDetails(data, mangaId, source) {
-        const obj = (0, AsuraScansHelper_1.extractMangaData)(data.replace(/\\"/g, '"').replace(/\\\\"/g, '\\"'), "comic") ?? '';
+        const obj = (0, AsuraScansHelper_1.extractMangaData)(data.replace(/\\"/g, '"').replace(/\\\\"/g, '\\"'), 'comic') ?? '';
         if (obj == '') {
             throw new Error(`Failed to parse comic object for manga ${mangaId}`); // If null, throw error, else parse data to json.
         }
@@ -4491,12 +4499,12 @@ class AsuraScansParser {
     }
     async parseChapterList(data, mangaId, source) {
         const tempData = data.replace(/\\"/g, '"').replace(/\\\\"/g, '\\"');
-        let obj = (0, AsuraScansHelper_1.extractMangaData)(tempData, "comic") ?? '';
+        let obj = (0, AsuraScansHelper_1.extractMangaData)(tempData, 'comic') ?? '';
         if (obj == '') {
             throw new Error(`Failed to parse comic object for manga ${mangaId}`); // If null, throw error, else parse data to json.
         }
         const comicObj = JSON.parse(obj);
-        obj = (0, AsuraScansHelper_1.extractMangaData)(tempData, "chapters") ?? '';
+        obj = (0, AsuraScansHelper_1.extractMangaData)(tempData, 'chapters') ?? '';
         if (obj == '') {
             throw new Error(`Failed to parse chapters object for manga ${mangaId}`); // If null, throw error, else parse data to json.
         }
@@ -4552,40 +4560,68 @@ class AsuraScansParser {
             pages: [...pages]
         });
     }
-    parseTags(data) {
-        const tagSections = [
-            { id: '0', label: 'chapters', tags: [
-                    App.createTag({ id: 'chapters:10', label: '+10' }),
-                    App.createTag({ id: 'chapters:20', label: '+20' }),
-                    App.createTag({ id: 'chapters:30', label: '+30' }),
-                    App.createTag({ id: 'chapters:40', label: '+40' }),
-                    App.createTag({ id: 'chapters:50', label: '+50' }),
-                    App.createTag({ id: 'chapters:60', label: '+60' }),
-                    App.createTag({ id: 'chapters:70', label: '+70' }),
-                    App.createTag({ id: 'chapters:80', label: '+80' }),
-                    App.createTag({ id: 'chapters:90', label: '+90' }),
-                    App.createTag({ id: 'chapters:100', label: '+100' }),
-                    App.createTag({ id: 'chapters:150', label: '+150' }),
-                    App.createTag({ id: 'chapters:200', label: '+200' }),
-                    App.createTag({ id: 'chapters:250', label: '+250' }),
-                ] },
-            { id: '1', label: 'genres', tags: [] },
-            { id: '2', label: 'status', tags: [] },
-            { id: '3', label: 'type', tags: [] },
-            { id: '4', label: 'order', tags: [] }
+    parseTags(filters) {
+        // Predefined chapters tags
+        const predefinedChaptersTags = [
+            { id: 'chapters:10', label: '+10' },
+            { id: 'chapters:20', label: '+20' },
+            { id: 'chapters:30', label: '+30' },
+            { id: 'chapters:40', label: '+40' },
+            { id: 'chapters:50', label: '+50' },
+            { id: 'chapters:60', label: '+60' },
+            { id: 'chapters:70', label: '+70' },
+            { id: 'chapters:80', label: '+80' },
+            { id: 'chapters:90', label: '+90' },
+            { id: 'chapters:100', label: '+100' },
+            { id: 'chapters:150', label: '+150' },
+            { id: 'chapters:200', label: '+200' },
+            { id: 'chapters:250', label: '+250' }
         ];
-        const filters = JSON.parse(data);
-        filters.types.forEach((type) => { tagSections[3].tags.push(App.createTag({ id: `type:${type.id.toString()}`, label: type.name })); });
-        filters.genres.forEach((type) => { tagSections[1].tags.push(App.createTag({ id: `genres:${type.id.toString()}`, label: type.name })); });
-        filters.statuses.forEach((type) => { tagSections[2].tags.push(App.createTag({ id: `status:${type.id.toString()}`, label: type.name })); });
-        filters.order.forEach((type) => { tagSections[4].tags.push(App.createTag({ id: `order:${type}`, label: type })); });
-        return tagSections.map((x) => App.createTagSection(x));
+        const createTags = (filterItems, prefix) => {
+            return filterItems.map(item => ({
+                id: `${prefix}:${item.id ?? item.value}`,
+                label: item.name
+            }));
+        };
+        const tagSections = [
+            // Tag section for genres
+            App.createTagSection({
+                id: '0',
+                label: 'genres',
+                tags: createTags(filters.genres, 'genres').map(x => App.createTag(x))
+            }),
+            // Tag section for status
+            App.createTagSection({
+                id: '1',
+                label: 'status',
+                tags: createTags(filters.statuses, 'status').map(x => App.createTag(x))
+            }),
+            // Tag section for types
+            App.createTagSection({
+                id: '2',
+                label: 'type',
+                tags: createTags(filters.types, 'type').map(x => App.createTag(x))
+            }),
+            // Tag section for order
+            App.createTagSection({
+                id: '3',
+                label: 'order',
+                tags: createTags(filters.order.map(order => ({ id: order.value, name: order.name })), 'order').map(x => App.createTag(x))
+            }),
+            // Predefined chapters tag section
+            App.createTagSection({
+                id: '4',
+                label: 'chapters',
+                tags: predefinedChaptersTags.map(x => App.createTag(x))
+            })
+        ];
+        return tagSections;
     }
     async parseSearchResults($, source) {
         const results = [];
         const mangas = $('a', $('h3:contains(Series list)')?.parent()?.next()?.next());
         if (!mangas.length) {
-            console.log(`Unable to parse search results!`);
+            console.log('Unable to parse search results!');
             return results;
         }
         for (const manga of mangas.toArray()) {
