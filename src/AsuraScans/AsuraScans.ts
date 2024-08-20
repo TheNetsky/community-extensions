@@ -42,13 +42,13 @@ import {
     SourceStateManager
 } from '@paperback/types/lib'
 
-const simpleUrl = require('simple-url')
+import simpleUrl from 'simple-url'
 
 const ASURASCANS_DOMAIN = 'https://asuracomic.net'
 const ASURASCANS_API_DOMAIN = 'https://gg.asuracomic.net'
 
 export const AsuraScansInfo: SourceInfo = {
-    version: '4.1.7',
+    version: '4.1.8',
     name: 'AsuraScans',
     description: 'Extension that pulls manga from AsuraScans',
     author: 'Seyden',
@@ -113,7 +113,7 @@ export class AsuraScans implements ChapterProviding, HomePageSectionsProviding, 
                 request.headers = {
                     ...(request.headers ?? {}), ...{
                         'user-agent': await this.requestManager.getDefaultUserAgent(),
-                        referer: `${url}/`,
+                        referer: `${url}/`
                     }
                 }
 
@@ -123,14 +123,14 @@ export class AsuraScans implements ChapterProviding, HomePageSectionsProviding, 
                     request.url = simpleUrl.create(path)
                 }
 
-                if (path.host.includes(`localhost`)) {
+                if (path.host.includes('localhost')) {
                     const url: string = await this.getBaseUrl()
                     path.host = simpleUrl.parse(url, true).host
                     request.url = simpleUrl.create(path)
                 }
 
                 if (isImgLink(request.url)) {
-                    let overrideUrl: string = await this.stateManager.retrieve('Domain')
+                    const overrideUrl: string = await this.stateManager.retrieve('Domain')
                     if (overrideUrl && overrideUrl != this.baseUrl) {
                         const basePath: any = simpleUrl.parse(this.baseUrl, true)
                         const overridePath: any = simpleUrl.parse(overrideUrl, true)
@@ -166,7 +166,7 @@ export class AsuraScans implements ChapterProviding, HomePageSectionsProviding, 
     /**
      * The language code which this source supports.
      */
-    language: string = '🇬🇧'
+    language = '🇬🇧'
 
     /**
      * The pathname between the domain and the manga.
@@ -214,14 +214,14 @@ export class AsuraScans implements ChapterProviding, HomePageSectionsProviding, 
             selectorFunc: ($: CheerioStatic) => $('div.w-full', $('h3:contains(Latest Updates)')?.parent()?.next()),
             titleSelectorFunc: ($: CheerioStatic, element: CheerioElement) => $('span.font-medium', element).text().trim(),
             subtitleSelectorFunc: ($: CheerioStatic, element: CheerioElement) => {
-                let obj = $('div.text-sm', element).first()
-                let hiddenObj = $('div.hidden', obj)
+                const obj = $('div.text-sm', element).first()
+                const hiddenObj = $('div.hidden', obj)
                 if (hiddenObj.length != 0)
                     return hiddenObj.text().trim()
                 return obj.text().trim()
             },
             getViewMoreItemsFunc: (page: string) => `page/${page}`,
-            sortIndex: 20,
+            sortIndex: 20
         },
         'top_alltime': {
             ...DefaultHomeSectionData,
@@ -250,16 +250,16 @@ export class AsuraScans implements ChapterProviding, HomePageSectionsProviding, 
     }
 
     // Ugly workaround to fasten up migrations and updates, paperback doesnt support any other way for not double requesting
-    mangaDataRequests: { [Key: string]: { expires: number, data: Promise<string> } } = { }
+    mangaDataRequests: { [Key: string]: { expires: number, data: Promise<string> } } = {}
 
     async getMangaRequest(mangaId: string): Promise<string> {
-        let request = this.mangaDataRequests[mangaId]
+        const request = this.mangaDataRequests[mangaId]
         if (request && request.expires > Date.now()) {
             return request.data
         }
 
         for (const key in this.mangaDataRequests) {
-            let tempRequest = this.mangaDataRequests[key]
+            const tempRequest = this.mangaDataRequests[key]
             if (tempRequest!.expires < Date.now()) {
                 delete this.mangaDataRequests[key]
             }
@@ -344,8 +344,13 @@ export class AsuraScans implements ChapterProviding, HomePageSectionsProviding, 
     }
 
     async getSearchTags(): Promise<TagSection[]> {
-        const data = await this.loadRequestData(`${ASURASCANS_API_DOMAIN}/api/series/filters`)
-        return this.parser.parseTags(data)
+        try {
+            const data = await this.loadRequestData(`${ASURASCANS_API_DOMAIN}/api/series/filters`)
+            return this.parser.parseTags(JSON.parse(data)
+            )
+        } catch (error) {
+            throw new Error(error as any)
+        }
     }
 
     async getSearchResults(query: SearchRequest, metadata: any): Promise<PagedResults> {
@@ -355,8 +360,7 @@ export class AsuraScans implements ChapterProviding, HomePageSectionsProviding, 
         }
         let manga: PartialSourceManga[] = []
 
-        while (manga.length == 0)
-        {
+        while (manga.length == 0) {
             result = await this.search(metadata, query)
             metadata = result.metadata
             manga = result.manga
@@ -385,7 +389,7 @@ export class AsuraScans implements ChapterProviding, HomePageSectionsProviding, 
         const manga: PartialSourceManga[] = []
         for (const result of results) {
             if (chapterTag) {
-                const chapterCount = parseInt(chapterTag.id.replace(`chapters:`, ''))
+                const chapterCount = parseInt(chapterTag.id.replace('chapters:', ''))
                 const chapterCountRegex = result.subtitle?.match(/(\d+)/)
                 if (!chapterCountRegex || chapterCountRegex?.[1] && parseInt(chapterCountRegex[1]) < chapterCount)
                     continue
@@ -400,8 +404,8 @@ export class AsuraScans implements ChapterProviding, HomePageSectionsProviding, 
         }
 
         metadata = !this.parser.isLastPage($, query?.title ? 'search_request' : 'view_more')
-                   ? { page: page + 1 }
-                   : undefined
+            ? { page: page + 1 }
+            : undefined
         return {
             metadata,
             manga
@@ -467,7 +471,7 @@ export class AsuraScans implements ChapterProviding, HomePageSectionsProviding, 
     }
 
     async getViewMoreItems(homepageSectionId: string, metadata: any): Promise<PagedResults> {
-        throw new Error(`Not implemented yet!`)
+        throw new Error('Not implemented yet!')
 
         /*const page: number = metadata?.page ?? 1
 
@@ -491,7 +495,7 @@ export class AsuraScans implements ChapterProviding, HomePageSectionsProviding, 
         })*/
     }
 
-    async loadRequestData(url: string, method: string = 'GET'): Promise<string> {
+    async loadRequestData(url: string, method = 'GET'): Promise<string> {
         const request = App.createRequest({
             url,
             method
@@ -502,7 +506,7 @@ export class AsuraScans implements ChapterProviding, HomePageSectionsProviding, 
         return response.data as string
     }
 
-    async loadCheerioData(url: string, method: string = 'GET'): Promise<CheerioStatic> {
+    async loadCheerioData(url: string, method = 'GET'): Promise<CheerioStatic> {
         return this.cheerio.load(await this.loadRequestData(url, method), { _useHtmlParser2: true })
     }
 

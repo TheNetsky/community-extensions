@@ -3,6 +3,7 @@ import {
     ChapterDetails,
     PartialSourceManga,
     SourceManga,
+    Tag,
     TagSection
 } from '@paperback/types'
 
@@ -12,10 +13,14 @@ import {
 } from './AsuraScansHelper'
 
 import entities = require('entities')
+import {
+    FilterItem,
+    Filters
+} from './AsuraScansInterfaces'
 
 export class AsuraScansParser {
     async parseMangaDetails(data: string, mangaId: string, source: any): Promise<SourceManga> {
-        const obj = extractMangaData(data.replace(/\\"/g, '"').replace(/\\\\"/g, '\\"'), "comic") ?? ''
+        const obj = extractMangaData(data.replace(/\\"/g, '"').replace(/\\\\"/g, '\\"'), 'comic') ?? ''
         if (obj == '') {
             throw new Error(`Failed to parse comic object for manga ${mangaId}`) // If null, throw error, else parse data to json.
         }
@@ -35,7 +40,7 @@ export class AsuraScansParser {
         const rating = comicObj.comic.rating
 
         const slug = comicObj.comic.slug?.trim()
-        if (slug)  {
+        if (slug) {
             await source.setMangaSlug(mangaId, `series/${slug}`)
         }
 
@@ -69,7 +74,7 @@ export class AsuraScansParser {
             App.createTagSection({
                 id: '0',
                 label: 'genres',
-                tags: comicObj.comic.genres.map((tag: any) => App.createTag( { id: `genres:${tag.id.toString()}`, label: tag.name } ))
+                tags: comicObj.comic.genres.map((tag: any) => App.createTag({ id: `genres:${tag.id.toString()}`, label: tag.name }))
             })
         ]
 
@@ -91,14 +96,14 @@ export class AsuraScansParser {
 
     async parseChapterList(data: string, mangaId: string, source: any): Promise<Chapter[]> {
         const tempData = data.replace(/\\"/g, '"').replace(/\\\\"/g, '\\"')
-        let obj = extractMangaData(tempData, "comic") ?? ''
+        let obj = extractMangaData(tempData, 'comic') ?? ''
         if (obj == '') {
             throw new Error(`Failed to parse comic object for manga ${mangaId}`) // If null, throw error, else parse data to json.
         }
 
         const comicObj = JSON.parse(obj)
 
-        obj = extractMangaData(tempData, "chapters") ?? ''
+        obj = extractMangaData(tempData, 'chapters') ?? ''
         if (obj == '') {
             throw new Error(`Failed to parse chapters object for manga ${mangaId}`) // If null, throw error, else parse data to json.
         }
@@ -106,8 +111,8 @@ export class AsuraScansParser {
         const chaptersObj = JSON.parse(obj)
 
         const slug = comicObj.comic.slug?.trim()
-        let mangaUrl: string = ''
-        if (slug)  {
+        let mangaUrl = ''
+        if (slug) {
             mangaUrl = `series/${slug}`
             await source.setMangaSlug(mangaId, mangaUrl)
         }
@@ -118,8 +123,7 @@ export class AsuraScansParser {
 
         const chapters: Chapter[] = []
         let sortingIndex = 0
-        for (const chapter of chaptersObj.chapters.reverse())
-        {
+        for (const chapter of chaptersObj.chapters.reverse()) {
             const id = chapter.id.toString()
             if (!id || typeof id === 'undefined') {
                 throw new Error(`Could not parse out ID when getting chapters for postId:${mangaId}`)
@@ -167,36 +171,65 @@ export class AsuraScansParser {
         })
     }
 
-    parseTags(data: string): TagSection[] {
-        const tagSections: any[] = [
-            { id: '0', label: 'chapters', tags: [
-                    App.createTag({ id: 'chapters:10', label: '+10' }),
-                    App.createTag({ id: 'chapters:20', label: '+20' }),
-                    App.createTag({ id: 'chapters:30', label: '+30' }),
-                    App.createTag({ id: 'chapters:40', label: '+40' }),
-                    App.createTag({ id: 'chapters:50', label: '+50' }),
-                    App.createTag({ id: 'chapters:60', label: '+60' }),
-                    App.createTag({ id: 'chapters:70', label: '+70' }),
-                    App.createTag({ id: 'chapters:80', label: '+80' }),
-                    App.createTag({ id: 'chapters:90', label: '+90' }),
-                    App.createTag({ id: 'chapters:100', label: '+100' }),
-                    App.createTag({ id: 'chapters:150', label: '+150' }),
-                    App.createTag({ id: 'chapters:200', label: '+200' }),
-                    App.createTag({ id: 'chapters:250', label: '+250' }),
-                ]},
-            { id: '1', label: 'genres', tags: [] },
-            { id: '2', label: 'status', tags: [] },
-            { id: '3', label: 'type', tags: [] },
-            { id: '4', label: 'order', tags: [] }
+    parseTags(filters: Filters): TagSection[] {
+
+        // Predefined chapters tags
+        const predefinedChaptersTags: Tag[] = [
+            { id: 'chapters:10', label: '+10' },
+            { id: 'chapters:20', label: '+20' },
+            { id: 'chapters:30', label: '+30' },
+            { id: 'chapters:40', label: '+40' },
+            { id: 'chapters:50', label: '+50' },
+            { id: 'chapters:60', label: '+60' },
+            { id: 'chapters:70', label: '+70' },
+            { id: 'chapters:80', label: '+80' },
+            { id: 'chapters:90', label: '+90' },
+            { id: 'chapters:100', label: '+100' },
+            { id: 'chapters:150', label: '+150' },
+            { id: 'chapters:200', label: '+200' },
+            { id: 'chapters:250', label: '+250' }
         ]
 
-        const filters = JSON.parse(data)
-        filters.types.forEach((type: any) => { tagSections[3].tags.push(App.createTag({ id: `type:${type.id.toString()}`, label: type.name })) })
-        filters.genres.forEach((type: any) => { tagSections[1].tags.push(App.createTag({ id: `genres:${type.id.toString()}`, label: type.name })) })
-        filters.statuses.forEach((type: any) => { tagSections[2].tags.push(App.createTag({ id:`status:${type.id.toString()}`, label: type.name })) })
-        filters.order.forEach((type: any) => { tagSections[4].tags.push(App.createTag({ id: `order:${type}`, label: type })) })
+        const createTags = (filterItems: FilterItem[], prefix: string): Tag[] => {
+            return filterItems.map(item => ({
+                id: `${prefix}:${item.id ?? item.value}`, // Use `id` or `value` for `order` items
+                label: item.name
+            }))
+        }
 
-        return tagSections.map((x) => App.createTagSection(x))
+        const tagSections: TagSection[] = [
+            // Tag section for genres
+            App.createTagSection({
+                id: '0',
+                label: 'genres',
+                tags: createTags(filters.genres, 'genres').map(x => App.createTag(x))
+            }),
+            // Tag section for status
+            App.createTagSection({
+                id: '1',
+                label: 'status',
+                tags: createTags(filters.statuses, 'status').map(x => App.createTag(x))
+            }),
+            // Tag section for types
+            App.createTagSection({
+                id: '2',
+                label: 'type',
+                tags: createTags(filters.types, 'type').map(x => App.createTag(x))
+            }),
+            // Tag section for order
+            App.createTagSection({
+                id: '3',
+                label: 'order',
+                tags: createTags(filters.order.map(order => ({ id: order.value, name: order.name })), 'order').map(x => App.createTag(x))
+            }),
+            // Predefined chapters tag section
+            App.createTagSection({
+                id: '4',
+                label: 'chapters',
+                tags: predefinedChaptersTags.map(x => App.createTag(x))
+            })
+        ]
+        return tagSections
     }
 
     async parseSearchResults($: CheerioSelector, source: any): Promise<any[]> {
@@ -204,7 +237,7 @@ export class AsuraScansParser {
 
         const mangas = $('a', $('h3:contains(Series list)')?.parent()?.next()?.next())
         if (!mangas.length) {
-            console.log(`Unable to parse search results!`)
+            console.log('Unable to parse search results!')
             return results
         }
 
@@ -245,10 +278,10 @@ export class AsuraScansParser {
             const path: string = ($('a', manga).attr('href') ?? '').replace(/\/$/, '').split('/').slice(-2).shift() ?? ''
             const postId = $('a', manga).attr('rel')
             const mangaId: string = source.usePostIds
-                                    ? (isNaN(Number(postId))
-                                       ? await source.slugToPostId(slug, path)
-                                       : postId)
-                                    : slug
+                ? (isNaN(Number(postId))
+                    ? await source.slugToPostId(slug, path)
+                    : postId)
+                : slug
 
             if (!mangaId || !title) {
                 console.log(`Failed to parse homepage sections for ${source.baseUrl}`)

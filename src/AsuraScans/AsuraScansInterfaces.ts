@@ -21,3 +21,10 @@ export interface StatusTypes {
     SEASONEND: string;
     COMINGSOON: string;
 }
+
+export interface Filters {
+    types: any[];
+    genres: any[];
+    statuses: any[];
+    order: any[];
+}
