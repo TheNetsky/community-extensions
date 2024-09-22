@@ -14,7 +14,6 @@ import {
 
 import entities = require('entities')
 import {
-    FilterItem,
     Filters
 } from './AsuraScansInterfaces'
 
@@ -44,7 +43,7 @@ export class AsuraScansParser {
             await source.setMangaSlug(mangaId, `series/${slug}`)
         }
 
-        const rawStatus = comicObj.comic.status.name.trim()
+        const rawStatus = comicObj.comic?.status?.name?.trim() ?? ''
         let status
         switch (rawStatus.toLowerCase()) {
             case source.manga_StatusTypes.DROPPED.toLowerCase():
@@ -190,8 +189,8 @@ export class AsuraScansParser {
             { id: 'chapters:250', label: '+250' }
         ]
 
-        const createTags = (filterItems: FilterItem[], prefix: string): Tag[] => {
-            return filterItems.map(item => ({
+        const createTags = (filterItems: any, prefix: string): Tag[] => {
+            return filterItems.map((item: { id: any; value: any; name: any }) => ({
                 id: `${prefix}:${item.id ?? item.value}`, // Use `id` or `value` for `order` items
                 label: item.name
             }))

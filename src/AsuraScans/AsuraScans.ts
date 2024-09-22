@@ -21,6 +21,8 @@ import {
     TagSection
 } from '@paperback/types'
 
+import { parse } from 'url'
+
 import { AsuraScansParser } from './AsuraScansParser'
 import { URLBuilder } from './UrlBuilder'
 import {
@@ -42,13 +44,11 @@ import {
     SourceStateManager
 } from '@paperback/types/lib'
 
-import simpleUrl from 'simple-url'
-
 const ASURASCANS_DOMAIN = 'https://asuracomic.net'
 const ASURASCANS_API_DOMAIN = 'https://gg.asuracomic.net'
 
 export const AsuraScansInfo: SourceInfo = {
-    version: '4.1.8',
+    version: '4.2.0',
     name: 'AsuraScans',
     description: 'Extension that pulls manga from AsuraScans',
     author: 'Seyden',
@@ -117,26 +117,32 @@ export class AsuraScans implements ChapterProviding, HomePageSectionsProviding, 
                     }
                 }
 
-                const path: any = simpleUrl.parse(request.url, true)
-                if (!path.protocol || path.protocol == 'http') {
-                    path.protocol = 'https'
-                    request.url = simpleUrl.create(path)
+                const urlObject = parse(request.url)
+
+                if (!urlObject.protocol || urlObject.protocol === 'http:') {
+                    urlObject.protocol = 'https:'
+                    request.url = urlObject.toString()
                 }
 
-                if (path.host.includes('localhost')) {
-                    const url: string = await this.getBaseUrl()
-                    path.host = simpleUrl.parse(url, true).host
-                    request.url = simpleUrl.create(path)
+
+                if (urlObject.hostname?.includes('localhost')) {
+                    const baseUrl = await this.getBaseUrl()
+                    const baseHost = parse(baseUrl).host ?? ''
+                    urlObject.host = baseHost
+                    request.url = urlObject.toString()
                 }
+
 
                 if (isImgLink(request.url)) {
                     const overrideUrl: string = await this.stateManager.retrieve('Domain')
-                    if (overrideUrl && overrideUrl != this.baseUrl) {
-                        const basePath: any = simpleUrl.parse(this.baseUrl, true)
-                        const overridePath: any = simpleUrl.parse(overrideUrl, true)
-                        if (path.host.includes(basePath.host) || path.host.includes(overridePath.host)) {
-                            path.host = overridePath.host
-                            request.url = simpleUrl.create(path)
+
+                    if (overrideUrl && overrideUrl !== this.baseUrl) {
+                        const basePath = parse(this.baseUrl)
+                        const overridePath = parse(overrideUrl)
+
+                        if (urlObject.host?.includes(basePath.host ?? '') || urlObject.host?.includes(overridePath.host ?? '')) {
+                            urlObject.host = overridePath.host
+                            request.url = urlObject.toString()
                         }
                     }
                 }
@@ -260,25 +266,22 @@ export class AsuraScans implements ChapterProviding, HomePageSectionsProviding, 
 
         for (const key in this.mangaDataRequests) {
             const tempRequest = this.mangaDataRequests[key]
-            if (tempRequest!.expires < Date.now()) {
+            if (tempRequest?.expires && tempRequest.expires < Date.now()) {
                 delete this.mangaDataRequests[key]
             }
         }
 
         this.mangaDataRequests[mangaId] = {
             expires: Date.now() + 5000,
-            data: new Promise<string>(async (resolve, reject) => {
-                try {
-                    const result = await this.getMangaData(mangaId)
-                    resolve(result)
-                }
-                catch (e) {
-                    reject(e)
-                }
+            data: new Promise<string>((resolve, reject) => {
+                this.getMangaData(mangaId)
+                    .then((result) => resolve(result))
+                    .catch((e) => reject(e))
             })
         }
 
-        return this.mangaDataRequests[mangaId]!.data
+
+        return this.mangaDataRequests[mangaId]?.data
     }
 
     async getMangaSlug(mangaId: string): Promise<string> {
@@ -289,7 +292,7 @@ export class AsuraScans implements ChapterProviding, HomePageSectionsProviding, 
         await this.stateManager.store(`${mangaId}:slug`, link)
     }
 
-    // @ts-ignore
+    //@ts-expect-error Force async function
     async getMangaShareUrl(mangaId: string): Promise<string> {
         const slug = await this.getMangaSlug(mangaId)
         if (!slug) {
@@ -419,7 +422,7 @@ export class AsuraScans implements ChapterProviding, HomePageSectionsProviding, 
             .addQueryParameter('page', page.toString())
 
         if (query?.title) {
-            urlBuilder = urlBuilder.addQueryParameter('name', encodeURIComponent(query?.title.replace(/[’‘´`'\-][a-z]*/g, '%') ?? ''))
+            urlBuilder = urlBuilder.addQueryParameter('name', encodeURIComponent(query?.title.replace(/[’‘´`'-][a-z]*/g, '%') ?? ''))
         }
 
         urlBuilder = urlBuilder
@@ -460,10 +463,20 @@ export class AsuraScans implements ChapterProviding, HomePageSectionsProviding, 
                 continue
             }
 
-            promises.push(new Promise(async () => {
-                section.section.items = await this.parser.parseHomeSection($, section, this)
-                sectionCallback(section.section)
-            }))
+            promises.push(
+                new Promise<void>((resolve) => {
+                    this.parser.parseHomeSection($, section, this)
+                        .then((items) => {
+                            section.section.items = items
+                            sectionCallback(section.section)
+                            resolve()  // Resolve once the work is done
+                        })
+                        .catch((error) => {
+                            throw new Error(error)
+                        })
+                })
+            )
+
         }
 
         // Make sure the function completes
