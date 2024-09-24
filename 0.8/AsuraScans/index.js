@@ -5178,7 +5178,7 @@ const AsuraScansHelper_1 = require("./AsuraScansHelper");
 const ASURASCANS_DOMAIN = 'https://asuracomic.net';
 const ASURASCANS_API_DOMAIN = 'https://gg.asuracomic.net';
 exports.AsuraScansInfo = {
-    version: '4.2.0',
+    version: '4.2.1',
     name: 'AsuraScans',
     description: 'Extension that pulls manga from AsuraScans',
     author: 'Seyden',
@@ -5431,7 +5431,8 @@ class AsuraScans {
         const chapterLink = await this.getChapterSlug(mangaId, chapterId);
         const url = await this.getBaseUrl();
         const data = await this.loadRequestData(`${url}/${chapterLink}/`);
-        return this.parser.parseChapterDetails(data, mangaId, chapterId);
+        const $ = this.cheerio.load(data);
+        return this.parser.parseChapterDetails($, mangaId, chapterId);
     }
     async getSearchTags() {
         try {
@@ -5803,17 +5804,18 @@ class AsuraScansParser {
             return App.createChapter(chapter);
         });
     }
-    parseChapterDetails(data, mangaId, chapterId) {
-        const pages = new Set();
-        const matches = data.matchAll(/(https:\/\/gg\.asuracomic\.net\/storage\/comics\/[^"\\]+)/gi);
-        for (const match of Array.from(matches)) {
-            const url = (match[1] ?? '').replace(' ', '%20');
-            pages.add(url);
+    parseChapterDetails($, mangaId, chapterId) {
+        const pages = [];
+        for (const img of $('img', 'div.py-8.-mx-5').toArray()) {
+            const image = $(img).attr('src') ?? '';
+            if (!image)
+                continue;
+            pages.push(image.trim());
         }
         return App.createChapterDetails({
             id: chapterId,
             mangaId,
-            pages: [...pages]
+            pages: pages
         });
     }
     parseTags(filters) {
