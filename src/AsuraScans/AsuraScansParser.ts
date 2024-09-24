@@ -154,19 +154,19 @@ export class AsuraScansParser {
         })
     }
 
-    parseChapterDetails(data: string, mangaId: string, chapterId: string): ChapterDetails {
-        const pages = new Set<string>()
+    parseChapterDetails($: CheerioStatic, mangaId: string, chapterId: string): ChapterDetails {
+        const pages: string[] = []
 
-        const matches = data.matchAll(/(https:\/\/gg\.asuracomic\.net\/storage\/comics\/[^"\\]+)/gi)
-        for (const match of Array.from(matches)) {
-            const url = (match[1] ?? '').replace(' ', '%20')
-            pages.add(url)
+        for (const img of $('img', 'div.py-8.-mx-5').toArray()) {
+            const image = $(img).attr('src') ?? ''
+            if (!image) continue
+            pages.push(image.trim())
         }
 
         return App.createChapterDetails({
             id: chapterId,
             mangaId,
-            pages: [...pages]
+            pages: pages
         })
     }
 

@@ -48,7 +48,7 @@ const ASURASCANS_DOMAIN = 'https://asuracomic.net'
 const ASURASCANS_API_DOMAIN = 'https://gg.asuracomic.net'
 
 export const AsuraScansInfo: SourceInfo = {
-    version: '4.2.0',
+    version: '4.2.1',
     name: 'AsuraScans',
     description: 'Extension that pulls manga from AsuraScans',
     author: 'Seyden',
@@ -343,7 +343,9 @@ export class AsuraScans implements ChapterProviding, HomePageSectionsProviding, 
         const chapterLink: string = await this.getChapterSlug(mangaId, chapterId)
         const url: string = await this.getBaseUrl()
         const data = await this.loadRequestData(`${url}/${chapterLink}/`)
-        return this.parser.parseChapterDetails(data, mangaId, chapterId)
+        const $ = this.cheerio.load(data)
+
+        return this.parser.parseChapterDetails($, mangaId, chapterId)
     }
 
     async getSearchTags(): Promise<TagSection[]> {
