@@ -160,10 +160,8 @@ const authRequestCache: Record<string, Promise<any | undefined>> = {}
 
 export function authEndpointRequest(requestManager: RequestManager, endpoint: 'login' | 'refresh' | 'logout', payload: any) {
     if (authRequestCache[endpoint] == undefined) {
-        console.log('started request')
         authRequestCache[endpoint] = _authEndpointRequest(requestManager, endpoint, payload).finally(() => {
             delete authRequestCache[endpoint]
-            console.log('completed request')
         })
     }
 

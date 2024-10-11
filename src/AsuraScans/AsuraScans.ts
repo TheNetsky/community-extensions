@@ -46,10 +46,10 @@ const AS_API_DOMAIN = 'https://gg.asuracomic.net'
 
 
 export const AsuraScansInfo: SourceInfo = {
-    version: '4.3.0',
+    version: '4.3.1',
     name: 'AsuraScans',
     description: 'Extension that pulls manga from AsuraScans',
-    author: 'Seyden',
+    author: 'Seyden & Netsky',
     authorWebsite: 'https://github.com/Seyden',
     icon: 'icon.png',
     contentRating: ContentRating.MATURE,
@@ -123,7 +123,6 @@ export class AsuraScans implements ChapterProviding, HomePageSectionsProviding, 
     }
 
     async getHomePageSections(sectionCallback: (section: HomeSection) => void): Promise<void> {
-        console.log('homepage soup')
         const request = App.createRequest({
             url: AS_DOMAIN,
             method: 'GET'
@@ -167,7 +166,6 @@ export class AsuraScans implements ChapterProviding, HomePageSectionsProviding, 
     }
 
     async getSearchTags(): Promise<TagSection[]> {
-        console.log('search tag soup')
         try {
             const request = App.createRequest({
                 url: `${AS_API_DOMAIN}/api/series/filters`,
