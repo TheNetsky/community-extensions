@@ -15045,10 +15045,10 @@ var _Sources = (() => {
   var AS_DOMAIN = "https://asuracomic.net";
   var AS_API_DOMAIN = "https://gg.asuracomic.net";
   var AsuraScansInfo = {
-    version: "4.3.0",
+    version: "4.3.1",
     name: "AsuraScans",
     description: "Extension that pulls manga from AsuraScans",
-    author: "Seyden",
+    author: "Seyden & Netsky",
     authorWebsite: "https://github.com/Seyden",
     icon: "icon.png",
     contentRating: import_types3.ContentRating.MATURE,
@@ -15114,7 +15114,6 @@ var _Sources = (() => {
       return parseChapterDetails($2, mangaId, chapterId);
     }
     async getHomePageSections(sectionCallback) {
-      console.log("homepage soup");
       const request = App.createRequest({
         url: AS_DOMAIN,
         method: "GET"
@@ -15150,7 +15149,6 @@ var _Sources = (() => {
       });
     }
     async getSearchTags() {
-      console.log("search tag soup");
       try {
         const request = App.createRequest({
           url: `${AS_API_DOMAIN}/api/series/filters`,

@@ -1994,10 +1994,8 @@ var _Sources = (() => {
   var authRequestCache = {};
   function authEndpointRequest(requestManager, endpoint, payload) {
     if (authRequestCache[endpoint] == void 0) {
-      console.log("started request");
       authRequestCache[endpoint] = _authEndpointRequest(requestManager, endpoint, payload).finally(() => {
         delete authRequestCache[endpoint];
-        console.log("completed request");
       });
     }
     return authRequestCache[endpoint];
