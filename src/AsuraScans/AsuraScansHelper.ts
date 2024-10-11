@@ -1,34 +1,7 @@
 import {
-    HomeSection,
-    HomeSectionType,
     Tag
 } from '@paperback/types'
 
-export interface HomeSectionData {
-    selectorFunc: Function
-    titleSelectorFunc: Function
-    subtitleSelectorFunc: Function
-    getViewMoreItemsFunc: Function
-    section: HomeSection
-    enabled: boolean
-    sortIndex: number
-}
-
-export const DefaultHomeSectionData = {
-    titleSelectorFunc: ($: CheerioStatic, element: CheerioElement) => $('h2', element).text().trim(),
-    subtitleSelectorFunc: () => undefined,
-    getViewMoreItemsFunc: () => undefined,
-    enabled: true
-}
-
-export function createHomeSection(id: string, title: string, containsMoreItems: boolean = true, type: string = HomeSectionType.singleRowNormal): HomeSection {
-    return App.createHomeSection({
-        id,
-        title,
-        type,
-        containsMoreItems
-    })
-}
 
 export function getIncludedTagBySection(section: string, tags: Tag[]): any {
     return (tags?.find((x: Tag) => x.id.startsWith(`${section}:`))?.id.replace(`${section}:`, '') ?? '').replace(' ', '+')
@@ -40,42 +13,65 @@ export function getFilterTagsBySection(section: string, tags: Tag[]): string[] {
     })
 }
 
-export function isImgLink(url: string) {
-    return(url.match(/^http[^\?]*.(jpg|jpeg|gif|png|tiff|bmp)(\?(.*))?$/gmi) != null);
-}
+export class URLBuilder {
+    parameters: Record<string, any | any[]> = {}
+    pathComponents: string[] = []
+    baseUrl: string
 
-export function extractMangaData(text: string, node: string) {
-
-    const startIndex = text.indexOf(`\"${node}\":`);
-    if (startIndex === -1) return null;
-
-    let openBraces = 0;
-    let closeBraces = 0;
-    let insideStringLiteral = false;
-    let endIndex = startIndex;
-
-    for (let i = startIndex; i < text.length; i++) {
-        if (text[i] === '"' && text[i-1] !== '\\') insideStringLiteral = !insideStringLiteral
-
-        if (!insideStringLiteral) {
-            if (text[i] === '{' || text[i] === '[') {
-                openBraces++;
-            }
-            if (text[i] === '}' || text[i] === ']') {
-                closeBraces++;
-            }
-        }
-
-        if (openBraces > 0 && openBraces === closeBraces) {
-            endIndex = i + 1;
-            break;
-        }
+    constructor(baseUrl: string) {
+        this.baseUrl = baseUrl.replace(/(^\/)?(?=.*)(\/$)?/gim, '')
     }
 
-    const finalText = text.substring(startIndex, endIndex)
-    if (!finalText) {
-        return ''
+    addPathComponent(component: string): URLBuilder {
+        this.pathComponents.push(component.replace(/(^\/)?(?=.*)(\/$)?/gim, ''))
+        return this
     }
 
-    return `{${finalText}}`;
+    addQueryParameter(key: string, value: any | any[]): URLBuilder {
+        if (Array.isArray(value) && !value.length) {
+            return this
+        }
+
+        const array = (this.parameters[key] as any[])
+        if (array?.length) {
+            array.push(value)
+        } else {
+            this.parameters[key] = value
+        }
+        return this
+    }
+
+    buildUrl({ addTrailingSlash, includeUndefinedParameters } = { addTrailingSlash: false, includeUndefinedParameters: false }): string {
+        let finalUrl = this.baseUrl + '/'
+
+        finalUrl += this.pathComponents.join('/')
+        finalUrl += addTrailingSlash
+            ? '/'
+            : ''
+        finalUrl += Object.values(this.parameters).length > 0
+            ? '?'
+            : ''
+        finalUrl += Object.entries(this.parameters).map(entry => {
+            if (!entry[1] && !includeUndefinedParameters) {
+                return undefined
+            }
+
+            if (Array.isArray(entry[1]) && entry[1].length) {
+                return `${entry[0]}=${entry[1].map(value => value || includeUndefinedParameters
+                    ? value
+                    : undefined)
+                    .filter(x => x !== undefined)
+                    .join(',')}`
+            }
+
+            if (typeof entry[1] === 'object') {
+                return Object.keys(entry[1]).map(key => `${entry[0]}[${key}]=${entry[1][key]}`)
+                    .join('&')
+            }
+
+            return `${entry[0]}=${entry[1]}`
+        }).filter(x => x !== undefined).join('&')
+
+        return finalUrl
+    }
 }

@@ -24,7 +24,10 @@ export interface StatusTypes {
 
 export interface Filters {
     types: any[];
-    genres: any[];
+    genres: [{
+        id: number;
+        name: string;
+    }];
     statuses: any[];
     order: any[];
 }
