@@ -90,7 +90,7 @@ function capitalizeTags(str: string) {
     }).join(' ')
 }
 
-const typeMap: { [key: string]: string; } = { 'j': 'jpg', 'p': 'png', 'g': 'gif' }
+const typeMap: { [key: string]: string; } = { 'j': 'jpg', 'p': 'png', 'g': 'gif', 'w': 'webp'}
 
 const typeOfImage = (image: ImagePageObject): string => {
     return typeMap[image.t] ?? ''
