@@ -75,6 +75,14 @@ export const settings = (stateManager: SourceStateManager): DUINavigationButton 
                                             )
                                         }
                                     })
+                                }),
+                                App.createDUISwitch({
+                                    id: 'skip_read_manga',
+                                    label: 'Skip Read Manga',
+                                    value: App.createDUIBinding({
+                                        get: async () => await stateManager.retrieve('skip_read_manga') ?? false,
+                                        set: async (newValue) => await stateManager.store('skip_read_manga', newValue)
+                                    })
                                 })
                             ]
                         },

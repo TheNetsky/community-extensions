@@ -84,7 +84,7 @@ export class NHentai implements SearchResultsProviding, MangaProviding, ChapterP
 
     stateManager = App.createSourceStateManager()
 
-    // Sourrce Settings
+    // Source Settings
     async getSourceMenu(): Promise<DUISection> {
         return Promise.resolve(App.createDUISection({
             id: 'main',
@@ -132,7 +132,18 @@ export class NHentai implements SearchResultsProviding, MangaProviding, ChapterP
         this.CloudFlareError(response.status)
 
         const jsonData = this.parseJson(response)
+
+        // Add the manga ID to the read list
+        await this.addToReadMangaIds(mangaId)
+
         return parseChapterDetails(jsonData, mangaId)
+    }
+
+    // Method to store read manga IDs
+     async addToReadMangaIds(mangaId: string): Promise<void> {
+        const readMangaIds = await this.stateManager.retrieve('read_manga_ids') ?? {}
+        readMangaIds[`read_manga_${mangaId}`] = true
+        await this.stateManager.store('read_manga_ids', readMangaIds)
     }
 
     async getSearchTags(): Promise<TagSection[]> {
@@ -150,6 +161,8 @@ export class NHentai implements SearchResultsProviding, MangaProviding, ChapterP
     async getSearchResults(query: SearchRequest, metadata: any): Promise<PagedResults> {
         const page: number = metadata?.page ?? 1
         const title: string = query.title ?? ''
+        const skipReadManga = await this.stateManager.retrieve('skip_read_manga') ?? false
+        const readMangaIds = skipReadManga ? await this.getReadMangaIds() : []
 
         if (metadata?.stopSearch ?? false) {
             return App.createPagedResults({
@@ -178,7 +191,7 @@ export class NHentai implements SearchResultsProviding, MangaProviding, ChapterP
                 }
             })
 
-            // Normal search query
+        // Normal search query
         } else {
             const q: string = encodeURIComponent(`${title} ${query?.includedTags?.map((x: Tag) => ` +${x.id}`)} `) + await this.generateQuery()
 
@@ -190,8 +203,9 @@ export class NHentai implements SearchResultsProviding, MangaProviding, ChapterP
             this.CloudFlareError(response.status)
 
             const jsonData = this.parseJson(response)
+            const results = parseSearch(jsonData).filter(manga => !readMangaIds.includes(manga.mangaId))
             return App.createPagedResults({
-                results: parseSearch(jsonData),
+                results,
                 metadata: {
                     page: page + 1
                 }
@@ -200,6 +214,8 @@ export class NHentai implements SearchResultsProviding, MangaProviding, ChapterP
     }
 
     async getHomePageSections(sectionCallback: (section: HomeSection) => void): Promise<void> {
+        const skipReadManga = await this.stateManager.retrieve('skip_read_manga') ?? false
+        const readMangaIds = skipReadManga ? await this.getReadMangaIds() : []
         const sections = [
             {
                 request: App.createRequest({
@@ -236,6 +252,30 @@ export class NHentai implements SearchResultsProviding, MangaProviding, ChapterP
                     containsMoreItems: true,
                     type: HomeSectionType.singleRowNormal
                 })
+            },
+            {
+                request: App.createRequest({
+                    url: `${NHENTAI_URL}/api/galleries/search?query=${await this.generateQuery()}&sort=popular-month`,
+                    method: 'GET'
+                }),
+                sectionID: App.createHomeSection({
+                    id: 'popular-month',
+                    title: 'Popular Monthly',
+                    containsMoreItems: true,
+                    type: HomeSectionType.singleRowNormal
+                })
+            },
+            {
+                request: App.createRequest({
+                    url: `${NHENTAI_URL}/api/galleries/search?query=${await this.generateQuery()}&sort=popular`,
+                    method: 'GET'
+                }),
+                sectionID: App.createHomeSection({
+                    id: 'popular',
+                    title: 'Popular All-Time',
+                    containsMoreItems: true,
+                    type: HomeSectionType.singleRowNormal
+                })
             }
         ]
 
@@ -251,7 +291,7 @@ export class NHentai implements SearchResultsProviding, MangaProviding, ChapterP
                         if (hasNoResults(jsonData)) {
                             return
                         }
-                        section.sectionID.items = parseSearch(jsonData)
+                        section.sectionID.items = parseSearch(jsonData).filter(manga => !readMangaIds.includes(manga.mangaId))
 
                         sectionCallback(section.sectionID)
                     })
@@ -263,6 +303,8 @@ export class NHentai implements SearchResultsProviding, MangaProviding, ChapterP
 
     async getViewMoreItems(homepageSectionId: string, metadata: any): Promise<PagedResults> {
         let page: number = metadata?.page ?? 1
+        const skipReadManga = await this.stateManager.retrieve('skip_read_manga') ?? false
+        const readMangaIds = skipReadManga ? await this.getReadMangaIds() : []
         const request = App.createRequest({
             url: `${NHENTAI_URL}/api/galleries/search?query=${await this.generateQuery()}&sort=${homepageSectionId}&page=${page}`,
             method: 'GET'
@@ -273,12 +315,21 @@ export class NHentai implements SearchResultsProviding, MangaProviding, ChapterP
         const jsonData = this.parseJson(response)
 
         page++
+        const results = parseSearch(jsonData).filter(manga => !readMangaIds.includes(manga.mangaId))
         return App.createPagedResults({
-            results: parseSearch(jsonData),
+            results,
             metadata: {
                 page: page
             }
         })
+    }
+
+    async getReadMangaIds(): Promise<string[]> {
+        const allData = await this.stateManager.retrieve('read_manga_ids')
+        if (!allData) {
+            return []
+        }
+        return Object.keys(allData).filter(key => key.startsWith('read_manga_')).map(key => key.replace('read_manga_', ''))
     }
 
     CloudFlareError(status: number): void {

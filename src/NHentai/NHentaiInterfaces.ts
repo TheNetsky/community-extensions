@@ -1,6 +1,6 @@
 
 export interface ImagePageObject {
-    t: 'j' | 'p' | 'g';// JPG (≧◡≦)
+    t: 'j' | 'p' | 'g' | 'w'; // Added 'w' for webp
     w: number;
     h: number;
 }
@@ -107,5 +107,5 @@ export interface QueryResponse {
 export interface RequestMetadata {
     nextPage?: number;
     maxPages?: number;
-    sort: 'popular-today' | 'popular-week' | 'popular' | '';
+    sort: 'popular-today' | 'popular-week' | 'popular-month' | 'popular' | '';
 }

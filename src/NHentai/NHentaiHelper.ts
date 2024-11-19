@@ -87,6 +87,12 @@ class NHSortOrderClass {
             name: 'Most Recent',
             NHCode: 'date',
             shortcuts: ['s:r', 's:recent', 'sort:r', 'sort:recent']
+        },
+        {
+            // Sort by popular this month
+            name: 'Popular This Month',
+            NHCode: 'popular-month',
+            shortcuts: ['s:pm', 's:m', 's:popular-month', 'sort:pm', 'sort:m', 'sort:popular-month']
         }
     ]
 
