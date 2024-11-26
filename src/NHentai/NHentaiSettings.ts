@@ -21,6 +21,9 @@ export const getExtraArgs = async (stateManager: SourceStateManager): Promise<st
     return (await stateManager.retrieve('extra_args') as string) ?? '-lolicon -shotacon -yaoi'
 }
 
+export const getMinPages = async (stateManager: SourceStateManager): Promise<number> => {
+    return (await stateManager.retrieve('min_pages') as number) ?? 0
+}
 
 export const settings = (stateManager: SourceStateManager): DUINavigationButton => {
     return App.createDUINavigationButton({
@@ -36,9 +39,10 @@ export const settings = (stateManager: SourceStateManager): DUINavigationButton 
                             await Promise.all([
                                 getLanguages(stateManager),
                                 getSortOrders(stateManager),
-                                getExtraArgs(stateManager)
+                                getExtraArgs(stateManager),
+                                getMinPages(stateManager)
                             ])
-                            return await [
+                            return [
                                 App.createDUISelect({
                                     id: 'languages',
                                     label: 'Languages',
@@ -83,6 +87,14 @@ export const settings = (stateManager: SourceStateManager): DUINavigationButton 
                                         get: async () => await stateManager.retrieve('skip_read_manga') ?? false,
                                         set: async (newValue) => await stateManager.store('skip_read_manga', newValue)
                                     })
+                                }),
+                                App.createDUIInputField({
+                                    id: 'min_pages',
+                                    label: 'Minimum Pages',
+                                    value: App.createDUIBinding({
+                                        get: () => getMinPages(stateManager),
+                                        set: async (newValue: number) => await stateManager.store('min_pages', newValue)
+                                    })
                                 })
                             ]
                         },
@@ -102,7 +114,8 @@ export const resetSettings = (stateManager: SourceStateManager): DUIButton => {
             await Promise.all([
                 stateManager.store('languages', null),
                 stateManager.store('sort_order', null),
-                stateManager.store('extra_args', null)
+                stateManager.store('extra_args', null),
+                stateManager.store('min_pages', null)
             ])
         }
     })

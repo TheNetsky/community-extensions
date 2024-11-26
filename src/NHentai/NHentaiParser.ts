@@ -3,7 +3,8 @@ import {
     ChapterDetails,
     PartialSourceManga,
     Tag,
-    Chapter
+    Chapter,
+    SourceStateManager
 } from '@paperback/types'
 
 import { NHLanguages } from './NHentaiHelper'
@@ -34,7 +35,7 @@ export const parseMangaDetails = (data: Gallery): SourceManga => {
             image: `https://t.nhentai.net/galleries/${data.media_id}/cover.${typeOfImage(data.images.cover)}`,
             status: 'Completed',
             tags: [App.createTagSection({ id: 'tags', label: 'Tags', tags: tags })],
-            desc: `Pages: ${data.num_pages}`
+            desc: `Pages: ${data.num_pages} | Favorites: ${data.num_favorites}`
         })
     })
 }
@@ -60,27 +61,32 @@ export const parseChapterDetails = (data: Gallery, mangaId: string): ChapterDeta
     })
 }
 
-export const parseSearch = (data: QueryResponse): PartialSourceManga[] => {
+export const parseSearch = (data: QueryResponse, readMangaIds: string[]): PartialSourceManga[] => {
     const tiles: PartialSourceManga[] = []
     const collectedIds: string[] = []
 
     if (!data?.result) {
         console.log(JSON.stringify(data))
-        throw new Error('JSON NO RESULT ERROR!\n\nYou\'ve like set too many additional arguments in this source\'s settings, remove some to see results!\nSo search with tags you need to use arguments like shown in the sourc\'s settings!')
+        throw new Error('JSON NO RESULT ERROR!\n\nYou\'ve like set too many additional arguments in this source\'s settings, remove some to see results!\nSo search with tags you need to use arguments like shown in the source\'s settings!')
     }
 
     for (const gallery of data.result) {
-
-        if (collectedIds.includes(gallery.id.toString())) continue
+        if (collectedIds.includes(gallery.id.toString()) || readMangaIds.includes(gallery.id.toString())) continue
         tiles.push(App.createPartialSourceManga({
             image: `https://t.nhentai.net/galleries/${gallery.media_id}/cover.${typeOfImage(gallery.images.cover)}`,
             title: gallery.title.pretty,
             mangaId: gallery.id.toString(),
-            subtitle: NHLanguages.getName(getLanguage(gallery))
+            subtitle: NHLanguages.getName(getLanguage(gallery)).substring(0, 3) + ' | Pgs: ' + gallery.num_pages
         }))
         collectedIds.push(gallery.id.toString())
     }
     return tiles
+}
+
+export const addToReadMangaIds = async (stateManager: SourceStateManager, mangaId: string): Promise<void> => {
+    const readMangaIds = await stateManager.retrieve('read_manga_ids') ?? {}
+    readMangaIds[mangaId] = true
+    await stateManager.store('read_manga_ids', readMangaIds)
 }
 
 // Utility

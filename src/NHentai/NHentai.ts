@@ -29,7 +29,8 @@ import {
     parseMangaDetails,
     parseChapters,
     parseChapterDetails,
-    parseSearch
+    parseSearch,
+    addToReadMangaIds
 } from './NHentaiParser'
 
 import {
@@ -43,7 +44,7 @@ import { popularTags } from './tags.json'
 const NHENTAI_URL = 'https://nhentai.net'
 
 export const NHentaiInfo: SourceInfo = {
-    version: '4.0.8',
+    version: '4.0.9',
     name: 'nhentai',
     icon: 'icon.png',
     author: 'NotMarek & Netsky',
@@ -134,16 +135,9 @@ export class NHentai implements SearchResultsProviding, MangaProviding, ChapterP
         const jsonData = this.parseJson(response)
 
         // Add the manga ID to the read list
-        await this.addToReadMangaIds(mangaId)
+        await addToReadMangaIds(this.stateManager, mangaId)
 
         return parseChapterDetails(jsonData, mangaId)
-    }
-
-    // Method to store read manga IDs
-     async addToReadMangaIds(mangaId: string): Promise<void> {
-        const readMangaIds = await this.stateManager.retrieve('read_manga_ids') ?? {}
-        readMangaIds[`read_manga_${mangaId}`] = true
-        await this.stateManager.store('read_manga_ids', readMangaIds)
     }
 
     async getSearchTags(): Promise<TagSection[]> {
@@ -173,44 +167,23 @@ export class NHentai implements SearchResultsProviding, MangaProviding, ChapterP
             })
         }
 
-        // When given number query
-        if (/^\d+$/.test(title)) {
-            const request = App.createRequest({
-                url: `${NHENTAI_URL}/api/gallery/${title}`,
-                method: 'GET'
-            })
-            const response = await this.requestManager.schedule(request, 1)
-            this.CloudFlareError(response.status)
+        const q: string = encodeURIComponent(`${title} ${query?.includedTags?.map((x: Tag) => ` +${x.id}`)} `) + await this.generateQuery()
+        const request = App.createRequest({
+            url: `${NHENTAI_URL}/api/galleries/search?query=${q}&page=${page}&sort=${await this.sortOrder(this.stateManager)}`,
+            method: 'GET'
+        })
+        const response = await this.requestManager.schedule(request, 1)
+        this.CloudFlareError(response.status)
 
-            const jsonData = this.parseJson(response)
-            return App.createPagedResults({
-                results: parseSearch({ result: [jsonData], num_pages: 1, per_page: 1 }),
-                metadata: {
-                    page: page + 1,
-                    stopSearch: true
-                }
-            })
+        const jsonData = this.parseJson(response)
+        const results = parseSearch(jsonData, readMangaIds ?? [])
 
-        // Normal search query
-        } else {
-            const q: string = encodeURIComponent(`${title} ${query?.includedTags?.map((x: Tag) => ` +${x.id}`)} `) + await this.generateQuery()
-
-            const request = App.createRequest({
-                url: `${NHENTAI_URL}/api/galleries/search?query=${(q)}&page=${page}&sort=${await this.sortOrder(this.stateManager)}`,
-                method: 'GET'
-            })
-            const response = await this.requestManager.schedule(request, 1)
-            this.CloudFlareError(response.status)
-
-            const jsonData = this.parseJson(response)
-            const results = parseSearch(jsonData).filter(manga => !readMangaIds.includes(manga.mangaId))
-            return App.createPagedResults({
-                results,
-                metadata: {
-                    page: page + 1
-                }
-            })
-        }
+        return App.createPagedResults({
+            results,
+            metadata: {
+                page: page + 1 // Increment by one page
+            }
+        })
     }
 
     async getHomePageSections(sectionCallback: (section: HomeSection) => void): Promise<void> {
@@ -291,8 +264,7 @@ export class NHentai implements SearchResultsProviding, MangaProviding, ChapterP
                         if (hasNoResults(jsonData)) {
                             return
                         }
-                        section.sectionID.items = parseSearch(jsonData).filter(manga => !readMangaIds.includes(manga.mangaId))
-
+                        section.sectionID.items = parseSearch(jsonData, readMangaIds ?? [])
                         sectionCallback(section.sectionID)
                     })
             )
@@ -305,17 +277,18 @@ export class NHentai implements SearchResultsProviding, MangaProviding, ChapterP
         let page: number = metadata?.page ?? 1
         const skipReadManga = await this.stateManager.retrieve('skip_read_manga') ?? false
         const readMangaIds = skipReadManga ? await this.getReadMangaIds() : []
+
         const request = App.createRequest({
             url: `${NHENTAI_URL}/api/galleries/search?query=${await this.generateQuery()}&sort=${homepageSectionId}&page=${page}`,
             method: 'GET'
         })
-
         const response = await this.requestManager.schedule(request, 1)
         this.CloudFlareError(response.status)
-        const jsonData = this.parseJson(response)
 
-        page++
-        const results = parseSearch(jsonData).filter(manga => !readMangaIds.includes(manga.mangaId))
+        const jsonData = this.parseJson(response)
+        const results = parseSearch(jsonData, readMangaIds ?? [])
+
+        page += 1 // Increment by one page
         return App.createPagedResults({
             results,
             metadata: {
@@ -329,7 +302,7 @@ export class NHentai implements SearchResultsProviding, MangaProviding, ChapterP
         if (!allData) {
             return []
         }
-        return Object.keys(allData).filter(key => key.startsWith('read_manga_')).map(key => key.replace('read_manga_', ''))
+        return Object.keys(allData).map(key => key)
     }
 
     CloudFlareError(status: number): void {
@@ -360,8 +333,10 @@ export class NHentai implements SearchResultsProviding, MangaProviding, ChapterP
     }
 
     async generateQuery(): Promise<string> {
-        const query = await this.language(this.stateManager) + await this.extraArgs(this.stateManager)
-        return encodeURIComponent(query)
+        const langQuery = await this.language(this.stateManager)
+        const extraArgs = await this.extraArgs(this.stateManager)
+        const minPages = await this.stateManager.retrieve('min_pages') ?? 0
+        return encodeURIComponent(`${langQuery} ${extraArgs} pages:>${minPages}`)
     }
 
     async language(stateManager: SourceStateManager): Promise<string> {
