@@ -24,6 +24,7 @@
     "@paperback/toolchain": "^0.8.7",
     "@paperback/types": "^0.8.7",
     "cheerio": "^1.0.0",
-    "html-entities": "^2.5.2"
+    "html-entities": "^2.5.2",
+    "js-base64": "^3.7.7"
   }
 }
