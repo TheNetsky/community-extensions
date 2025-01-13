@@ -7,7 +7,7 @@ import {
     MDRatings,
     MDImageQuality
 } from './MangaDexHelper'
-
+import { Base64 } from 'js-base64'
 
 export async function getLanguages(stateManager: SourceStateManager) {
     return (await stateManager.retrieve('languages') ?? MDLanguages.getDefault())
@@ -152,7 +152,7 @@ export async function parseAccessToken(accessToken: string | undefined) {
     const tokenBodyBase64 = accessToken.split('.')[1]
     if (!tokenBodyBase64) return undefined
 
-    const tokenBodyJSON = Buffer.from(tokenBodyBase64, 'base64').toString('ascii')
+    const tokenBodyJSON = Base64.decode(tokenBodyBase64)
     return JSON.parse(tokenBodyJSON)
 }
 
