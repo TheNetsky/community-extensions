@@ -64,7 +64,7 @@ export const MangaDexInfo: SourceInfo = {
     description: 'Extension that pulls manga from MangaDex',
     icon: 'icon.png',
     name: 'MangaDex',
-    version: '3.0.6',
+    version: '3.0.7',
     authorWebsite: 'https://github.com/nar1n',
     websiteBaseURL: MANGADEX_DOMAIN,
     contentRating: ContentRating.EVERYONE,
@@ -386,7 +386,7 @@ export class MangaDex implements ChapterProviding, SearchResultsProviding, HomeP
             throw new Error('Failed to parse json for the given search')
         }
 
-        results = await parseMangaList(json.data, this, getSearchThumbnail)
+        results = await parseMangaList(json.data, this, getSearchThumbnail, query)
         return App.createPagedResults({
             results,
             metadata: { offset: offset + 100 }

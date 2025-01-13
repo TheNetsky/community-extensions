@@ -9,6 +9,7 @@ import {
 } from './MangaDexHelper'
 import { Base64 } from 'js-base64'
 
+
 export async function getLanguages(stateManager: SourceStateManager) {
     return (await stateManager.retrieve('languages') ?? MDLanguages.getDefault())
 }
