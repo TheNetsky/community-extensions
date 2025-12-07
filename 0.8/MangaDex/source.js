@@ -2186,7 +2186,7 @@ var _Sources = (() => {
     for (const manga of object) {
       const mangaId = manga.id;
       const mangaDetails = manga.attributes;
-      const title = source.decodeHTMLEntity(mangaDetails.title.en ?? mangaDetails.altTitles.map((x) => Object.values(x).find((v) => v !== void 0)).find((t) => t !== void 0));
+      const title = source.decodeHTMLEntity(mangaDetails.title.en ?? Object.values(mangaDetails.title)[0] ?? mangaDetails.altTitles.map((x) => Object.values(x).find((v) => v !== void 0)).find((t) => t !== void 0)) ?? "INVALID TITLE";
       const coverFileName = manga.relationships.filter((x) => x.type == "cover_art").map((x) => x.attributes?.fileName)[0];
       const image = coverFileName ? `${source.COVER_BASE_URL}/${mangaId}/${coverFileName}${MDImageQuality.getEnding(await thumbnailSelector(source.stateManager))}` : "https://mangadex.org/_nuxt/img/cover-placeholder.d12c3c5.jpg";
       const subtitle = `${mangaDetails.lastVolume ? `Vol. ${mangaDetails.lastVolume}` : ""} ${mangaDetails.lastChapter ? `Ch. ${mangaDetails.lastChapter}` : ""}`;
