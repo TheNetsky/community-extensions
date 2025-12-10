@@ -7,7 +7,9 @@ import {
     MDRatings,
     MDImageQuality
 } from './MangaDexHelper'
-
+import {
+    Buffer
+} from 'buffer'
 
 export async function getLanguages(stateManager: SourceStateManager) {
     return (await stateManager.retrieve('languages') ?? MDLanguages.getDefault())
