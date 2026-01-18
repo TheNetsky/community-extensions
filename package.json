@@ -1,7 +1,7 @@
 {
   "name": "community-extensions",
   "version": "0.8.0",
-  "repositoryName": "Paperback Community Extensions (0.8)",
+  "repositoryName": "Paperback Community Extensions (0.8)(Kidius)",
   "description": "Community maintained Paperback extension repository",
   "main": "index.js",
   "scripts": {
