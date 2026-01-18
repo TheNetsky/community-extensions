@@ -200,7 +200,7 @@ export async function accountSettings(stateManager: SourceStateManager, requestM
             id: 'mdex_oauth',
             label: 'Login with MangaDex',
             authorizeEndpoint: 'https://auth.mangadex.org/realms/mangadex/protocol/openid-connect/auth',
-            clientId: 'thirdparty-oauth-client',
+            clientId: 'paperback',
             redirectUri: 'paperback://mangadex-login',
             responseType: {
                 type: 'pkce',
