@@ -1,13 +1,30 @@
 
 export interface ImagePageObject {
-    t: 'j' | 'p' | 'g' | 'w';// JPG (≧◡≦)
+    t: 'j' | 'p' | 'g' | 'w';
     w: number;
     h: number;
 }
+
 export interface ImageObject {
     pages: ImagePageObject[];
     cover: ImagePageObject;
     thumbnail: ImagePageObject;
+}
+
+export interface CoverInfo {
+    path: string;
+    width: number;
+    height: number;
+}
+
+export interface PageInfo {
+    number: number;
+    path: string;
+    width: number;
+    height: number;
+    thumbnail: string;
+    thumbnail_width: number;
+    thumbnail_height: number;
 }
 
 export interface TagObject {
@@ -21,91 +38,52 @@ export interface TagObject {
     | 'parody'
     | 'tag';
     name: string;
+    slug?: string;
     url: string;
     count: number;
 }
 
 interface resTitleObj {
-    /**
-     * English title of this object.
-     *
-     * `eg: [Azuma Tesshin] Ichigo Cake to Mont Blanc | Strawberry Cake & Mont Blanc - The cherry boy with Bitch sister. (COMIC Kairakuten 2018-05) [English] [Tamamo | GDS] [Digital]"`
-     */
     english: string;
-    /**
-     * Native title of this object.
-     *
-     * `eg: [東鉄神] イチゴのケーキとモンブラン (COMIC 快楽天 2018年5月号) [英訳] [DL版]`
-     */
-    japanese: string;
-    /**
-     * Pretty title of this object.
-     *
-     * `eg: Ichigo Cake to Mont Blanc | Strawberry Cake & Mont Blanc - The cherry boy with Bitch sister.`
-     */
+    japanese: string | null;
     pretty: string;
 }
 
-export interface Gallery {
-    /**
-     * id of this object.
-     * `eg: 363636`
-     */
+export interface GalleryListItem {
     id: number;
-    /**
-     * mediaId of this object.
-     * `eg: 1940023`
-     */
     media_id: string;
-    /**
-     * Titles of this object.
-     */
+    thumbnail: string;
+    thumbnail_width: number;
+    thumbnail_height: number;
+    english_title: string;
+    japanese_title: string | null;
+    tag_ids: number[];
+}
+
+export interface Gallery {
+    id: number;
+    media_id: string;
     title: resTitleObj;
-    /**
-     * Images of this object.
-     */
-    images: ImageObject;
-    /**
-     * Scanlator of this object.
-     * Not available still. :-(
-     */
+    images?: ImageObject;
+    cover?: CoverInfo;
+    thumbnail?: CoverInfo;
     scanlator: string | undefined;
-    /**
-     * Uploaded date of this object in unix timestamp
-     */
     upload_date: number;
-    /**
-     * Tags of this object.
-     */
     tags: TagObject[];
-    /**
-     * Number of pages this object has.
-     */
     num_pages: number;
-    /**
-     * Number of favorites of this object in nhentai
-     */
     num_favorites: number;
+    pages?: PageInfo[];
 }
 
 export interface QueryResponse {
-    /**
-     * Array of {@link Gallery}
-     */
-    result: Gallery[];
-    /**
-     * Number of pages for this query.
-     * ``results = per_page * num_pages``
-     */
+    result: Array<GalleryListItem | Gallery>;
     num_pages: number;
-    /**
-     * Number of {@link Gallery} per page.
-     */
     per_page: number;
+    total?: number | null;
 }
 
 export interface RequestMetadata {
     nextPage?: number;
     maxPages?: number;
-    sort: 'popular-today' | 'popular-week' | 'popular-month' | 'popular' | '';
+    sort: 'date' | 'popular-today' | 'popular-week' | 'popular-month' | 'popular' | '';
 }
