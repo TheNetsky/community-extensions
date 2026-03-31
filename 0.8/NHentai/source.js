@@ -837,6 +837,8 @@ var _Sources = (() => {
   }
 
   // src/NHentai/NHentaiParser.ts
+  var IMAGE_SERVER = "https://i4.nhentai.net";
+  var THUMB_SERVER = "https://t3.nhentai.net";
   var parseMangaDetails = (data) => {
     const artist = getArtist(data);
     const tags = [];
@@ -847,10 +849,10 @@ var _Sources = (() => {
     return App.createSourceManga({
       id: data.id.toString(),
       mangaInfo: App.createMangaInfo({
-        titles: Object.values(data.title).filter((title) => title !== null),
+        titles: Object.values(data.title).filter((title) => title !== null && title !== ""),
         artist,
         author: artist,
-        image: `https://t3.nhentai.net/galleries/${data.media_id}/cover.${typeOfImage(data.images.cover)}`,
+        image: getCoverImage(data),
         status: "Completed",
         tags: [App.createTagSection({ id: "tags", label: "Tags", tags })],
         desc: `Pages: ${data.num_pages} | Favorites: ${data.num_favorites}`
@@ -861,7 +863,7 @@ var _Sources = (() => {
     return App.createChapter({
       id: mangaId,
       chapNum: 1,
-      name: data.title.english,
+      name: data.title.pretty || data.title.english,
       langCode: NHLanguages.getLangCode(getLanguage(data)),
       time: new Date(data.upload_date * 1e3)
     });
@@ -870,28 +872,35 @@ var _Sources = (() => {
     return App.createChapterDetails({
       id: mangaId,
       mangaId,
-      pages: data.images.pages.map((image, i) => {
-        const type = typeOfImage(image);
-        return `https://i4.nhentai.net/galleries/${data.media_id}/${i + 1}.${type}`;
-      })
+      pages: getPages(data)
     });
   };
   var parseSearch = (data) => {
     const tiles = [];
     const collectedIds = [];
+    if (data?.error) {
+      const errorMessage = data.error;
+      if (typeof errorMessage == "string" && errorMessage.toLowerCase().includes("rate limit")) {
+        throw new Error("RATE LIMIT ERROR!\n\nnhentai API rate limit exceeded. Please wait about 1 minute and try again.");
+      }
+      throw new Error(`NHENTAI API ERROR!
+
+${errorMessage}`);
+    }
     if (!data?.result) {
       console.log(JSON.stringify(data));
-      throw new Error("JSON NO RESULT ERROR!\n\nYou've like set too many additional arguments in this source's settings, remove some to see results!\nSo search with tags you need to use arguments like shown in the sourc's settings!");
+      throw new Error("JSON NO RESULT ERROR!\n\nThe API returned an unexpected response. Please try again in a moment.");
     }
     for (const gallery of data.result) {
-      if (collectedIds.includes(gallery.id.toString())) continue;
+      const mangaId = gallery.id.toString();
+      if (collectedIds.includes(mangaId)) continue;
       tiles.push(App.createPartialSourceManga({
-        image: `https://t3.nhentai.net/galleries/${gallery.media_id}/cover.${typeOfImage(gallery.images.cover)}`,
-        title: gallery.title.pretty,
-        mangaId: gallery.id.toString(),
-        subtitle: NHLanguages.getName(getLanguage(gallery)).substring(0, 3) + " | Pgs: " + gallery.num_pages
+        image: getSearchImage(gallery),
+        title: getSearchTitle(gallery),
+        mangaId,
+        subtitle: getSearchSubtitle(gallery)
       }));
-      collectedIds.push(gallery.id.toString());
+      collectedIds.push(mangaId);
     }
     return tiles;
   };
@@ -903,6 +912,54 @@ var _Sources = (() => {
   var typeMap = { "j": "jpg", "p": "png", "g": "gif", "w": "webp" };
   var typeOfImage = (image) => {
     return typeMap[image.t] ?? "";
+  };
+  var normalizePath = (path) => {
+    return path.replace(/^\/+/, "");
+  };
+  var withBase = (base, path) => {
+    return `${base}/${normalizePath(path)}`;
+  };
+  var isGalleryListItem = (gallery) => {
+    return "english_title" in gallery;
+  };
+  var getCoverImage = (gallery) => {
+    if (gallery.cover?.path) {
+      return withBase(THUMB_SERVER, gallery.cover.path);
+    }
+    if (gallery.images?.cover) {
+      return `${THUMB_SERVER}/galleries/${gallery.media_id}/cover.${typeOfImage(gallery.images.cover)}`;
+    }
+    return "";
+  };
+  var getPages = (gallery) => {
+    if (gallery.pages?.length) {
+      return gallery.pages.map((page) => withBase(IMAGE_SERVER, page.path));
+    }
+    if (gallery.images?.pages?.length) {
+      return gallery.images.pages.map((image, i) => {
+        const type = typeOfImage(image);
+        return `${IMAGE_SERVER}/galleries/${gallery.media_id}/${i + 1}.${type}`;
+      });
+    }
+    return [];
+  };
+  var getSearchImage = (gallery) => {
+    if (isGalleryListItem(gallery)) {
+      return withBase(THUMB_SERVER, gallery.thumbnail);
+    }
+    return getCoverImage(gallery);
+  };
+  var getSearchTitle = (gallery) => {
+    if (isGalleryListItem(gallery)) {
+      return gallery.english_title || gallery.japanese_title || `Gallery ${gallery.id}`;
+    }
+    return gallery.title.pretty || gallery.title.english || `Gallery ${gallery.id}`;
+  };
+  var getSearchSubtitle = (gallery) => {
+    if (isGalleryListItem(gallery)) {
+      return "";
+    }
+    return `${NHLanguages.getName(getLanguage(gallery)).substring(0, 3)} | Pgs: ${gallery.num_pages}`;
   };
   var getArtist = (gallery) => {
     const tags = gallery.tags;
@@ -1250,8 +1307,9 @@ var _Sources = (() => {
 
   // src/NHentai/NHentai.ts
   var NHENTAI_URL = "https://nhentai.net";
+  var MAX_RATE_LIMIT_RETRIES = 3;
   var NHentaiInfo = {
-    version: "4.0.9",
+    version: "4.1.0",
     name: "nhentai",
     icon: "icon.png",
     author: "NotMarek & Netsky",
@@ -1270,7 +1328,7 @@ var _Sources = (() => {
   var NHentai = class _NHentai {
     constructor() {
       this.requestManager = App.createRequestManager({
-        requestsPerSecond: 3,
+        requestsPerSecond: 1,
         requestTimeout: 15e3,
         interceptor: {
           interceptRequest: async (request) => {
@@ -1305,34 +1363,57 @@ var _Sources = (() => {
     getMangaShareUrl(mangaId) {
       return `${NHENTAI_URL}/g/${mangaId}`;
     }
+    async scheduleRequest(request, priority) {
+      let response = await this.requestManager.schedule(request, priority);
+      for (let i = 0; i < MAX_RATE_LIMIT_RETRIES; i++) {
+        if (response.status != 429) {
+          return response;
+        }
+        response = await this.requestManager.schedule(request, priority);
+      }
+      return response;
+    }
+    throwApiError(status, jsonData) {
+      if (status == 429 || jsonData?.error == "Rate limit exceeded") {
+        throw new Error("RATE LIMIT ERROR:\nnhentai API rate limit exceeded. Please wait about 1 minute and try again.");
+      }
+      if (status >= 400) {
+        const errorMessage = typeof jsonData?.error == "string" ? jsonData.error : `Request failed with status ${status}`;
+        throw new Error(`NHENTAI API ERROR:
+${errorMessage}`);
+      }
+    }
     async getMangaDetails(mangaId) {
       const request = App.createRequest({
-        url: `${NHENTAI_URL}/api/gallery/${mangaId}`,
+        url: `${NHENTAI_URL}/api/v2/galleries/${mangaId}`,
         method: "GET"
       });
-      const response = await this.requestManager.schedule(request, 1);
+      const response = await this.scheduleRequest(request, 1);
       this.CloudFlareError(response.status);
       const jsonData = this.parseJson(response);
+      this.throwApiError(response.status, jsonData);
       return parseMangaDetails(jsonData);
     }
     async getChapters(mangaId) {
       const request = App.createRequest({
-        url: `${NHENTAI_URL}/api/gallery/${mangaId}`,
+        url: `${NHENTAI_URL}/api/v2/galleries/${mangaId}`,
         method: "GET"
       });
-      const response = await this.requestManager.schedule(request, 1);
+      const response = await this.scheduleRequest(request, 1);
       this.CloudFlareError(response.status);
       const jsonData = this.parseJson(response);
+      this.throwApiError(response.status, jsonData);
       return [parseChapters(jsonData, mangaId)];
     }
     async getChapterDetails(mangaId) {
       const request = App.createRequest({
-        url: `${NHENTAI_URL}/api/gallery/${mangaId}`,
+        url: `${NHENTAI_URL}/api/v2/galleries/${mangaId}`,
         method: "GET"
       });
-      const response = await this.requestManager.schedule(request, 1);
+      const response = await this.scheduleRequest(request, 1);
       this.CloudFlareError(response.status);
       const jsonData = this.parseJson(response);
+      this.throwApiError(response.status, jsonData);
       return parseChapterDetails(jsonData, mangaId);
     }
     async getSearchTags() {
@@ -1358,12 +1439,22 @@ var _Sources = (() => {
       }
       if (/^\d+$/.test(title)) {
         const request = App.createRequest({
-          url: `${NHENTAI_URL}/api/gallery/${title}`,
+          url: `${NHENTAI_URL}/api/v2/galleries/${title}`,
           method: "GET"
         });
-        const response = await this.requestManager.schedule(request, 1);
+        const response = await this.scheduleRequest(request, 1);
         this.CloudFlareError(response.status);
+        if (response.status == 404) {
+          return App.createPagedResults({
+            results: [],
+            metadata: {
+              page,
+              stopSearch: true
+            }
+          });
+        }
         const jsonData = this.parseJson(response);
+        this.throwApiError(response.status, jsonData);
         return App.createPagedResults({
           results: parseSearch({ result: [jsonData], num_pages: 1, per_page: 1 }),
           metadata: {
@@ -1374,12 +1465,13 @@ var _Sources = (() => {
       } else {
         const q = encodeURIComponent(`${title} ${query?.includedTags?.map((x) => ` +${x.id}`)} `) + await this.generateQuery();
         const request = App.createRequest({
-          url: `${NHENTAI_URL}/api/galleries/search?query=${q}&page=${page}&sort=${await this.sortOrder(this.stateManager)}`,
+          url: `${NHENTAI_URL}/api/v2/search?query=${q}&page=${page}&sort=${await this.sortOrder(this.stateManager)}`,
           method: "GET"
         });
-        const response = await this.requestManager.schedule(request, 1);
+        const response = await this.scheduleRequest(request, 1);
         this.CloudFlareError(response.status);
         const jsonData = this.parseJson(response);
+        this.throwApiError(response.status, jsonData);
         return App.createPagedResults({
           results: parseSearch(jsonData),
           metadata: {
@@ -1392,7 +1484,7 @@ var _Sources = (() => {
       const sections = [
         {
           request: App.createRequest({
-            url: `${NHENTAI_URL}/api/galleries/search?query=${await this.generateQuery()}&sort=date`,
+            url: `${NHENTAI_URL}/api/v2/search?query=${await this.generateQuery()}&sort=date`,
             method: "GET"
           }),
           sectionID: App.createHomeSection({
@@ -1404,7 +1496,7 @@ var _Sources = (() => {
         },
         {
           request: App.createRequest({
-            url: `${NHENTAI_URL}/api/galleries/search?query=${await this.generateQuery()}&sort=popular-today`,
+            url: `${NHENTAI_URL}/api/v2/search?query=${await this.generateQuery()}&sort=popular-today`,
             method: "GET"
           }),
           sectionID: App.createHomeSection({
@@ -1416,7 +1508,7 @@ var _Sources = (() => {
         },
         {
           request: App.createRequest({
-            url: `${NHENTAI_URL}/api/galleries/search?query=${await this.generateQuery()}&sort=popular-week`,
+            url: `${NHENTAI_URL}/api/v2/search?query=${await this.generateQuery()}&sort=popular-week`,
             method: "GET"
           }),
           sectionID: App.createHomeSection({
@@ -1428,7 +1520,7 @@ var _Sources = (() => {
         },
         {
           request: App.createRequest({
-            url: `${NHENTAI_URL}/api/galleries/search?query=${await this.generateQuery()}&sort=popular-month`,
+            url: `${NHENTAI_URL}/api/v2/search?query=${await this.generateQuery()}&sort=popular-month`,
             method: "GET"
           }),
           sectionID: App.createHomeSection({
@@ -1440,7 +1532,7 @@ var _Sources = (() => {
         },
         {
           request: App.createRequest({
-            url: `${NHENTAI_URL}/api/galleries/search?query=${await this.generateQuery()}&sort=popular`,
+            url: `${NHENTAI_URL}/api/v2/search?query=${await this.generateQuery()}&sort=popular`,
             method: "GET"
           }),
           sectionID: App.createHomeSection({
@@ -1455,9 +1547,12 @@ var _Sources = (() => {
       for (const section of sections) {
         sectionCallback(section.sectionID);
         promises.push(
-          this.requestManager.schedule(section.request, 1).then((response) => {
+          this.scheduleRequest(section.request, 1).then((response) => {
             this.CloudFlareError(response.status);
             const jsonData = this.parseJson(response);
+            if (response.status >= 400) {
+              return;
+            }
             if (hasNoResults(jsonData)) {
               return;
             }
@@ -1471,12 +1566,13 @@ var _Sources = (() => {
     async getViewMoreItems(homepageSectionId, metadata) {
       let page = metadata?.page ?? 1;
       const request = App.createRequest({
-        url: `${NHENTAI_URL}/api/galleries/search?query=${await this.generateQuery()}&sort=${homepageSectionId}&page=${page}`,
+        url: `${NHENTAI_URL}/api/v2/search?query=${await this.generateQuery()}&sort=${homepageSectionId}&page=${page}`,
         method: "GET"
       });
-      const response = await this.requestManager.schedule(request, 1);
+      const response = await this.scheduleRequest(request, 1);
       this.CloudFlareError(response.status);
       const jsonData = this.parseJson(response);
+      this.throwApiError(response.status, jsonData);
       page++;
       return App.createPagedResults({
         results: parseSearch(jsonData),
@@ -1486,7 +1582,7 @@ var _Sources = (() => {
       });
     }
     CloudFlareError(status) {
-      if (status == 503 || status == 403) {
+      if (status == 403) {
         throw new Error(`CLOUDFLARE BYPASS ERROR:
 Please go to the homepage of <${_NHentai.name}> and press the cloud icon.`);
       }
@@ -1507,7 +1603,11 @@ Please go to the homepage of <${_NHentai.name}> and press the cloud icon.`);
         return typeof response.data == "string" ? JSON.parse(response.data) : response.data;
       } catch (error) {
         console.log(JSON.stringify(error));
-        throw new Error("JSON PARSE ERROR!\n\nYou've like set too many filters in this source's settings, remove some to see results!");
+        if (response.status == 403 || response.status == 503) {
+          throw new Error(`CLOUDFLARE BYPASS ERROR:
+Please go to the homepage of <${_NHentai.name}> and press the cloud icon.`);
+        }
+        throw new Error("JSON PARSE ERROR!\n\nThe API returned an unexpected response. Please try again in a moment.");
       }
     }
     async generateQuery() {
