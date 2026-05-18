@@ -31,6 +31,7 @@ import {
     resetSettings
 } from './MangaPlusSettings'
 
+
 const BASE_URL = 'https://mangaplus.shueisha.co.jp'
 const API_URL = 'https://jumpg-webapi.tokyo-cdn.com/api'
 
@@ -62,7 +63,8 @@ export class MangaPlus implements SearchResultsProviding, MangaProviding, Chapte
                     ...(request.headers ?? {}),
                     
                     'Referer': `${BASE_URL}/`,
-                    'user-agent': await this.requestManager.getDefaultUserAgent()
+                    'user-agent': await this.requestManager.getDefaultUserAgent(),
+                    'SESSION-TOKEN' : crypto.randomUUID()
                 }
 
                 if (request.url.startsWith('imageMangaId=')) {
