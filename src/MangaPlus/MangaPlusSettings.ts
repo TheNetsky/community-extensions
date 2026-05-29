@@ -130,7 +130,8 @@ export function resetSettings(stateManager: SourceStateManager): DUIButton {
         onTap: async () => {
             await stateManager.store('languages', [Language.ENGLISH]),
             await stateManager.store('split_images', 'yes'),
-            await stateManager.store('image_resolution', 'high')
+            await stateManager.store('image_resolution', 'high'),
+            await stateManager.store('sessionToken', '')
         }
     })
 }

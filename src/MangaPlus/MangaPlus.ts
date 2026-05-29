@@ -37,7 +37,7 @@ const API_URL = 'https://jumpg-webapi.tokyo-cdn.com/api'
 const langCode = Language.ENGLISH
 
 export const MangaPlusInfo: SourceInfo = {
-    version: '2.0.3',
+    version: '2.0.4',
     name: 'MangaPlus',
     icon: 'icon.png',
     author: 'Rinto-kun',
@@ -50,8 +50,24 @@ export const MangaPlusInfo: SourceInfo = {
 }
 
 export class MangaPlus implements SearchResultsProviding, MangaProviding, ChapterProviding, HomePageSectionsProviding {
-
     stateManager = App.createSourceStateManager()
+
+    private cachedSessionToken: string | null = null
+
+    private async getSessionToken(): Promise<string> {
+        if (this.cachedSessionToken) return this.cachedSessionToken
+
+        const storedToken = (await this.stateManager.retrieve('sessionToken')) as string || null
+        if (storedToken) {
+            this.cachedSessionToken = storedToken
+            return storedToken
+        }
+
+        const sessionToken = crypto.randomUUID()
+        await this.stateManager.store('sessionToken', sessionToken)
+        this.cachedSessionToken = sessionToken
+        return sessionToken
+    }
 
     requestManager = App.createRequestManager({
         requestsPerSecond: 10,
@@ -60,9 +76,9 @@ export class MangaPlus implements SearchResultsProviding, MangaProviding, Chapte
             interceptRequest: async (request: Request): Promise<Request> => {
                 request.headers = {
                     ...(request.headers ?? {}),
-                    
+                    'Origin': BASE_URL,
                     'Referer': `${BASE_URL}/`,
-                    'user-agent': await this.requestManager.getDefaultUserAgent()
+                    'session-token': await this.getSessionToken()
                 }
 
                 if (request.url.startsWith('imageMangaId=')) {
