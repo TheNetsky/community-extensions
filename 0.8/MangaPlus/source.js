@@ -959,7 +959,7 @@ var _Sources = (() => {
       id: "reset",
       label: "Reset to Default",
       onTap: async () => {
-        await stateManager.store("languages", ["ENGLISH" /* ENGLISH */]), await stateManager.store("split_images", "yes"), await stateManager.store("image_resolution", "high");
+        await stateManager.store("languages", ["ENGLISH" /* ENGLISH */]), await stateManager.store("split_images", "yes"), await stateManager.store("image_resolution", "high"), await stateManager.store("sessionToken", "");
       }
     });
   }
@@ -969,7 +969,7 @@ var _Sources = (() => {
   var API_URL = "https://jumpg-webapi.tokyo-cdn.com/api";
   var langCode = "ENGLISH" /* ENGLISH */;
   var MangaPlusInfo = {
-    version: "2.0.3",
+    version: "2.0.4",
     name: "MangaPlus",
     icon: "icon.png",
     author: "Rinto-kun",
@@ -983,6 +983,7 @@ var _Sources = (() => {
   var MangaPlus = class {
     constructor() {
       this.stateManager = App.createSourceStateManager();
+      this.cachedSessionToken = null;
       this.requestManager = App.createRequestManager({
         requestsPerSecond: 10,
         requestTimeout: 2e4,
@@ -990,8 +991,9 @@ var _Sources = (() => {
           interceptRequest: async (request) => {
             request.headers = {
               ...request.headers ?? {},
+              "Origin": BASE_URL,
               "Referer": `${BASE_URL}/`,
-              "user-agent": await this.requestManager.getDefaultUserAgent()
+              "session-token": await this.getSessionToken()
             };
             if (request.url.startsWith("imageMangaId=")) {
               const mangaId = request.url.replace("imageMangaId=", "");
@@ -1012,6 +1014,18 @@ var _Sources = (() => {
           }
         }
       });
+    }
+    async getSessionToken() {
+      if (this.cachedSessionToken) return this.cachedSessionToken;
+      const storedToken = await this.stateManager.retrieve("sessionToken") || null;
+      if (storedToken) {
+        this.cachedSessionToken = storedToken;
+        return storedToken;
+      }
+      const sessionToken = crypto.randomUUID();
+      await this.stateManager.store("sessionToken", sessionToken);
+      this.cachedSessionToken = sessionToken;
+      return sessionToken;
     }
     async getSourceMenu() {
       return App.createDUISection(
