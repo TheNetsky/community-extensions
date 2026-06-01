@@ -3804,15 +3804,15 @@ var _Sources = (() => {
       return App.createDUIOAuthButton({
         id: "mdex_oauth",
         label: "Login with MangaDex",
-        authorizeEndpoint: "https://auth.mangadex.dev/realms/mangadex/protocol/openid-connect/auth",
-        clientId: "thirdparty-oauth-client",
+        authorizeEndpoint: "https://auth.mangadex.org/realms/mangadex/protocol/openid-connect/auth",
+        clientId: "paperback",
         redirectUri: "paperback://mangadex-login",
         responseType: {
           type: "pkce",
           pkceCodeLength: 64,
           pkceCodeMethod: "S256",
           formEncodeGrant: true,
-          tokenEndpoint: "https://auth.mangadex.dev/realms/mangadex/protocol/openid-connect/token"
+          tokenEndpoint: "https://auth.mangadex.org/realms/mangadex/protocol/openid-connect/token"
         },
         async successHandler(accessToken2, refreshToken) {
           await saveAccessToken(stateManager, accessToken2, refreshToken);
