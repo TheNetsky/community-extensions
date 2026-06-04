@@ -22,7 +22,8 @@ import {
 import {
     Language,
     MangaPlusResponse,
-    TitleDetailView
+    TitleDetailView,
+    getLangPopup
 } from './MangaPlusHelper'
 
 import {
@@ -37,7 +38,7 @@ const API_URL = 'https://jumpg-webapi.tokyo-cdn.com/api'
 const langCode = Language.ENGLISH
 
 export const MangaPlusInfo: SourceInfo = {
-    version: '2.0.4',
+    version: '2.0.5',
     name: 'MangaPlus',
     icon: 'icon.png',
     author: 'Rinto-kun',
@@ -63,7 +64,11 @@ export class MangaPlus implements SearchResultsProviding, MangaProviding, Chapte
             return storedToken
         }
 
-        const sessionToken = crypto.randomUUID()
+        const sessionToken = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+            const r = Math.random() * 16 | 0
+            const v = c === 'x' ? r : (r & 0x3 | 0x8)
+            return v.toString(16)
+        })
         await this.stateManager.store('sessionToken', sessionToken)
         this.cachedSessionToken = sessionToken
         return sessionToken
@@ -174,7 +179,7 @@ export class MangaPlus implements SearchResultsProviding, MangaProviding, Chapte
         const result = JSON.parse(response.data as string) as MangaPlusResponse
 
         if (result.success === undefined) {
-            throw new Error(result.error?.langPopup(Language.ENGLISH)?.body ?? 'Unknown error')
+            throw new Error(getLangPopup(result.error, Language.ENGLISH)?.body ?? 'Unknown error')
         }
 
         const pages = result.success.mangaViewer?.pages
@@ -200,7 +205,7 @@ export class MangaPlus implements SearchResultsProviding, MangaProviding, Chapte
         const result = JSON.parse(response.data as string) as MangaPlusResponse
 
         if (result.success === undefined) {
-            throw new Error(result.error?.langPopup(Language.ENGLISH)?.body ?? 'Unknown error')
+            throw new Error(getLangPopup(result.error, Language.ENGLISH)?.body ?? 'Unknown error')
         }
 
         const languages = await getLanguages(this.stateManager)
@@ -240,7 +245,7 @@ export class MangaPlus implements SearchResultsProviding, MangaProviding, Chapte
         const result = JSON.parse(response.data as string) as MangaPlusResponse
 
         if (result.success === undefined) {
-            throw new Error(result.error?.langPopup(Language.ENGLISH)?.body ?? 'Unknown error')
+            throw new Error(getLangPopup(result.error, Language.ENGLISH)?.body ?? 'Unknown error')
         }
 
         const languages = await getLanguages(this.stateManager)
@@ -285,7 +290,7 @@ export class MangaPlus implements SearchResultsProviding, MangaProviding, Chapte
         const result: MangaPlusResponse = JSON.parse(response.data as string)
 
         if (result.success === undefined) {
-            throw new Error(result.error?.langPopup(langCode)?.body ?? 'Unknown error')
+            throw new Error(getLangPopup(result.error, langCode)?.body ?? 'Unknown error')
         }
 
         const languages = await getLanguages(this.stateManager)
@@ -322,7 +327,7 @@ export class MangaPlus implements SearchResultsProviding, MangaProviding, Chapte
 
         const featuredSection = App.createHomeSection({
             id: 'featured',
-            title: 'Deatured',
+            title: 'Featured',
             containsMoreItems: true,
             type: HomeSectionType.featured,
             items: await this.getFeaturedTitles()
@@ -387,7 +392,7 @@ export class MangaPlus implements SearchResultsProviding, MangaProviding, Chapte
         const result = JSON.parse(response.data as string) as MangaPlusResponse
 
         if (result.success === undefined) {
-            throw new Error(result.error?.langPopup(Language.ENGLISH)?.body ?? 'Unknown error')
+            throw new Error(getLangPopup(result.error, Language.ENGLISH)?.body ?? 'Unknown error')
         }
 
         const ltitle = query.title?.toLowerCase() ?? ''
