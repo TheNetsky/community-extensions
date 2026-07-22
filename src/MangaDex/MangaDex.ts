@@ -229,7 +229,10 @@ export class MangaDex implements ChapterProviding, SearchResultsProviding, HomeP
                 artist,
                 desc: desc ?? 'No Description',
                 status,
-                tags: [App.createTagSection({ id: 'tags', label: 'Tags', tags: tags })]
+                tags: [App.createTagSection({ id: 'tags', label: 'Tags', tags: tags })],
+                additionalInfo: {
+                    availableTranslatedLanguages: mangaDetails.availableTranslatedLanguages.join(',')
+                }
             })
         })
     }
