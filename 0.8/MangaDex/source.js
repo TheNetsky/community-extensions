@@ -5185,7 +5185,10 @@ var _Sources = (() => {
           artist,
           desc: desc ?? "No Description",
           status,
-          tags: [App.createTagSection({ id: "tags", label: "Tags", tags })]
+          tags: [App.createTagSection({ id: "tags", label: "Tags", tags })],
+          additionalInfo: {
+            availableTranslatedLanguages: mangaDetails.availableTranslatedLanguages.join(",")
+          }
         })
       });
     }
