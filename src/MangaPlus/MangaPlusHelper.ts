@@ -82,6 +82,21 @@ export enum Language {
     VIETNAMESE = 'VIETNAMESE'
 }
 
+export function getLanguageCode(language: Language): string {
+    switch (language) {
+        case Language.SPANISH: return 'esp'
+        case Language.FRENCH: return 'fra'
+        case Language.INDONESIAN: return 'ind'
+        case Language.PORTUGUESE_BR: return 'ptb'
+        case Language.RUSSIAN: return 'rus'
+        case Language.THAI: return 'tha'
+        case Language.GERMAN: return 'deu'
+        case Language.ITALIAN: return 'ita'
+        case Language.VIETNAMESE: return 'vie'
+        default: return 'eng'
+    }
+}
+
 export class Title {
     viewCount = 0
 

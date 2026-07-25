@@ -6,8 +6,9 @@ import {
 
 import { Language } from './MangaPlusHelper'
 
-export const getLanguages = async (stateManager: SourceStateManager): Promise<string[]> => {
-    return (await stateManager.retrieve('languages') as string[]) ?? [Language.ENGLISH]
+export const getLanguages = async (stateManager: SourceStateManager): Promise<Language[]> => {
+    const languages = await stateManager.retrieve('languages') as Language[] | undefined
+    return languages?.length ? [...new Set(languages)] : [Language.ENGLISH]
 }
 
 export const getSplitImages = async (stateManager: SourceStateManager): Promise<string> => {
@@ -41,7 +42,7 @@ export const contentSettings = (stateManager: SourceStateManager): DUINavigation
                                 App.createDUISelect({
                                     id: 'languages',
                                     label: 'Languages',
-                                    options: [Language.ENGLISH, Language.FRENCH, Language.INDONESIAN, Language.PORTUGUESE_BR, Language.RUSSIAN, Language.SPANISH, Language.THAI, Language.VIETNAMESE],
+                                    options: [Language.ENGLISH, Language.SPANISH, Language.FRENCH, Language.INDONESIAN, Language.PORTUGUESE_BR, Language.RUSSIAN, Language.THAI, Language.VIETNAMESE, Language.GERMAN],
                                     labelResolver: async (option: string) => {
                                         switch (option) {
                                             case Language.ENGLISH:
@@ -67,6 +68,9 @@ export const contentSettings = (stateManager: SourceStateManager): DUINavigation
 
                                             case Language.VIETNAMESE:
                                                 return 'Tiếng Việt'
+
+                                            case Language.GERMAN:
+                                                return 'Deutsch'
 
                                             default:
                                                 return ''

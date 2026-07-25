@@ -20,8 +20,10 @@ import {
 } from '@paperback/types'
 
 import {
+    getLanguageCode,
     Language,
     MangaPlusResponse,
+    SuccessResult,
     Title,
     TitleDetailView
 } from './MangaPlusHelper'
@@ -148,14 +150,15 @@ export class MangaPlus implements SearchResultsProviding, MangaProviding, Chapte
     }
 
     async getChapterDetails(mangaId: string, chapterId: string): Promise<ChapterDetails> {
+        const language = await this.getPreferredLanguage()
         const request = App.createRequest({
-            url: `${API_URL}/manga_viewer_v3?chapter_id=${chapterId}&split=${(await this.stateManager.retrieve('split_images')) as string ?? 'no'}&img_quality=${(await this.stateManager.retrieve('image_resolution')) as string ?? 'high'}&clang=eng`,
+            url: `${API_URL}/manga_viewer_v3?chapter_id=${chapterId}&split=${(await this.stateManager.retrieve('split_images')) as string ?? 'no'}&img_quality=${(await this.stateManager.retrieve('image_resolution')) as string ?? 'high'}&clang=${getLanguageCode(language)}`,
             method: 'GET'
         })
 
         const response = await this.requestManager.schedule(request, 1)
         const result = this.decodeResponse(response)
-        const success = this.getSuccess(result)
+        const success = this.getSuccess(result, language)
         const viewer = success.mangaViewer
         if (!viewer) throw new Error('Cannot find chapter')
 
@@ -179,58 +182,39 @@ export class MangaPlus implements SearchResultsProviding, MangaProviding, Chapte
     }
 
     async getFeaturedTitles(): Promise<PartialSourceManga[]> {
-        const request = App.createRequest({
-            url: `${API_URL}/featuredV2?lang=eng&clang=eng`,
-            method: 'GET'
+        const { languages, results } = await this.getResultsByLanguage(
+            languageCode => `${API_URL}/featuredV2?lang=${languageCode}&clang=${languageCode}`
+        )
+        const featuredTitles = results.flatMap(result => {
+            const lists = result.featuredTitlesViewV2?.contents
+                .map(content => content.titleList)
+                .filter((titleList): titleList is NonNullable<typeof titleList> => titleList !== undefined)
+            const featured = lists?.find(list => list.listName === 'WEEKLY SHONEN JUMP') ?? lists?.[0]
+            return featured?.featuredTitles ?? []
         })
 
-        const response = await this.requestManager.schedule(request, 1)
-        const result = this.getSuccess(this.decodeResponse(response))
-
-        const languages = await getLanguages(this.stateManager)
-        const lists = result.featuredTitlesViewV2?.contents
-            .map(content => content.titleList)
-            .filter((titleList): titleList is NonNullable<typeof titleList> => titleList !== undefined)
-        const featured = lists?.find(list => list.listName === 'WEEKLY SHONEN JUMP') ?? lists?.[0]
-
-        return this.createPartialTitles(featured?.featuredTitles ?? [], languages)
+        return this.createPartialTitles(featuredTitles, languages)
     }
 
     async getPopularTitles(): Promise<PartialSourceManga[]> {
-        const request = App.createRequest({
-            url: `${API_URL}/title_list/rankingV2?lang=eng&type=hottest&clang=eng`,
-            method: 'GET'
-        })
-
-        const response = await this.requestManager.schedule(request, 1)
-        const result = this.getSuccess(this.decodeResponse(response))
-
-        const languages = await getLanguages(this.stateManager)
-        return this.createPartialTitles(result.titleRankingViewV2?.titles ?? [], languages)
+        const { languages, results } = await this.getResultsByLanguage(
+            languageCode => `${API_URL}/title_list/rankingV2?lang=${languageCode}&type=hottest&clang=${languageCode}`
+        )
+        const titles = results.flatMap(result => result.titleRankingViewV2?.titles ?? [])
+        return this.createPartialTitles(titles, languages)
     }
 
     async getLatestUpdates(): Promise<PartialSourceManga[]> {
-
-        function latestUpdatesRequest() {
-            return App.createRequest({
-                url: `${API_URL}/web/web_homeV4?lang=eng&clang=eng`,
-                method: 'GET'
-            })
-        }
-
-        const request = latestUpdatesRequest()
-        const response = await this.requestManager.schedule(request, 1)
-
-        const result = this.getSuccess(this.decodeResponse(response))
-
-        const languages = await getLanguages(this.stateManager)
-
-        const results = result.webHomeViewV4?.groups
+        const { languages, results } = await this.getResultsByLanguage(
+            languageCode => `${API_URL}/web/web_homeV4?lang=${languageCode}&clang=${languageCode}`
+        )
+        const titles = results.flatMap(result => result.webHomeViewV4?.groups
             .flatMap(group => group.titles)
             .map(updatedTitle => updatedTitle.title)
             .filter((title): title is Title => title !== undefined)
+            ?? [])
 
-        return this.createPartialTitles(results ?? [], languages)
+        return this.createPartialTitles(titles, languages)
     }
 
     async getHomePageSections(sectionCallback: (section: HomeSection) => void): Promise<void> {
@@ -290,6 +274,7 @@ export class MangaPlus implements SearchResultsProviding, MangaProviding, Chapte
     }
 
     async getSearchResults(query: SearchRequest, metadata: any): Promise<PagedResults> {
+        const languages = await getLanguages(this.stateManager)
         const request = App.createRequest({
             url: `${API_URL}/title_list/allV2`,
             method: 'GET'
@@ -297,10 +282,9 @@ export class MangaPlus implements SearchResultsProviding, MangaProviding, Chapte
         )
 
         const response = await this.requestManager.schedule(request, 1)
-        const result = this.getSuccess(this.decodeResponse(response))
+        const result = this.getSuccess(this.decodeResponse(response), languages[0])
 
         const ltitle = query.title?.toLowerCase() ?? ''
-        const languages = await getLanguages(this.stateManager)
 
         const results = result.allTitlesViewV2?.allTitlesGroup.flatMap(group => group.titles)
             .filter((title) => title.author?.toLowerCase().includes(ltitle) || title.name.toLowerCase().includes(ltitle))
@@ -312,16 +296,35 @@ export class MangaPlus implements SearchResultsProviding, MangaProviding, Chapte
 
     // Utility
     private async getTitleDetail(mangaId: string): Promise<TitleDetailView> {
+        const language = await this.getPreferredLanguage()
         const request = App.createRequest({
-            url: `${API_URL}/title_detailV3?title_id=${mangaId}&clang=eng`,
+            url: `${API_URL}/title_detailV3?title_id=${mangaId}&clang=${getLanguageCode(language)}`,
             method: 'GET'
         })
 
         const response = await this.requestManager.schedule(request, 1)
-        const result = this.getSuccess(this.decodeResponse(response))
+        const result = this.getSuccess(this.decodeResponse(response), language)
         if (!result.titleDetailView?.title) throw new Error('Cannot find manga')
 
         return result.titleDetailView
+    }
+
+    private async getResultsByLanguage(url: (languageCode: string) => string): Promise<{ languages: Language[]; results: SuccessResult[] }> {
+        const languages = await getLanguages(this.stateManager)
+        const results = await Promise.all(languages.map(async language => {
+            const request = App.createRequest({
+                url: url(getLanguageCode(language)),
+                method: 'GET'
+            })
+            const response = await this.requestManager.schedule(request, 1)
+            return this.getSuccess(this.decodeResponse(response), language)
+        }))
+
+        return { languages, results }
+    }
+
+    private async getPreferredLanguage(): Promise<Language> {
+        return (await getLanguages(this.stateManager))[0] ?? Language.ENGLISH
     }
 
     private decodeResponse(response: Response): MangaPlusResponse {
@@ -329,15 +332,15 @@ export class MangaPlus implements SearchResultsProviding, MangaProviding, Chapte
         return decodeMangaPlusResponse(App.createByteArray(response.rawData))
     }
 
-    private getSuccess(result: MangaPlusResponse) {
+    private getSuccess(result: MangaPlusResponse, language: Language = Language.ENGLISH): SuccessResult {
         if (!result.success) {
-            throw new Error(result.error?.langPopup(Language.ENGLISH)?.body ?? 'Unknown error')
+            throw new Error(result.error?.langPopup(language)?.body ?? 'Unknown error')
         }
 
         return result.success
     }
 
-    private createPartialTitles(items: Title[], languages: string[]): PartialSourceManga[] {
+    private createPartialTitles(items: Title[], languages: Language[]): PartialSourceManga[] {
         const collectedIds = new Set<string>()
         const titles: PartialSourceManga[] = []
 
